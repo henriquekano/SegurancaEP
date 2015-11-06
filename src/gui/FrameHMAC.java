@@ -19,6 +19,7 @@ import javax.swing.border.TitledBorder;
 import javax.xml.bind.DatatypeConverter;
 
 import src.algorithms.Hmac;
+import src.algorithms.utils.Utils;
 
 public class FrameHMAC extends JFrame {
 	
@@ -91,7 +92,7 @@ public class FrameHMAC extends JFrame {
 			Optional<byte[]> mac = Hmac.encript(key, message, hashAlgorithm);
 			if(mac.isPresent()){
 				JTextArea macTextArea = getTa_mac();
-				macTextArea.setText(DatatypeConverter.printHexBinary(mac.get()));
+				macTextArea.setText(Utils.toHexString(mac.get()));
 			}
 		}
 	}

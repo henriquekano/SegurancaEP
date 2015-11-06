@@ -21,6 +21,7 @@ import javax.swing.border.TitledBorder;
 import javax.xml.bind.DatatypeConverter;
 
 import src.algorithms.RSA;
+import src.algorithms.utils.Utils;
 
 public class FrameRSA extends JFrame {
 	
@@ -107,7 +108,7 @@ public class FrameRSA extends JFrame {
 			Optional<byte[]> encryptedMessage = RSA.encrypt(mesageTextArea.getText().getBytes(), publicKey);
 			
 			if(encryptedMessage.isPresent()){
-				encryptedTextArea.setText(DatatypeConverter.printHexBinary(encryptedMessage.get()));
+				encryptedTextArea.setText(Utils.toHexString(encryptedMessage.get()));
 				this.encryptedMessage = encryptedMessage.get();
 			}
 		}

@@ -96,7 +96,8 @@ public class FrameDSA extends JFrame {
 	}
 	
 	private void dsa_sign() {
-//  TODO
+		JTextArea publicKeyTextArea = getTa_privatekey();
+		
 	}
 
 
