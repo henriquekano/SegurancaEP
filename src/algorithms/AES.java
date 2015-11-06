@@ -1,8 +1,30 @@
 package src.algorithms;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import src.algorithms.utils.Utils;
+
 public class AES {
 	
-	static final int KEY_SIZE = 128;
+	private int[][] state;
+	
+	private int[][] initializationVector;
+	
+	private int round;
+	
+	private static int[] originalKey;
+	private static int[] expandedKey;
+	
+	private static final int KEY_SIZE = 128;
+	private static final int N = 16;
+	private static final int B = 176;
+	
+	enum OP_MODE{
+		CBC,
+		EBC
+	};
 
 //	https://en.wikipedia.org/wiki/Rijndael_S-box
 	static final int[][] S_BOX = {
@@ -58,11 +80,58 @@ public class AES {
 		{0x0d, 0x09, 0x0e, 0x0b},
 		{0x0b, 0x0d, 0x09, 0x0e}
 	};
+	
+	private static final int[] RCON_TABLE = {
+		0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 
+		0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 
+		0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 
+		0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 
+		0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 
+		0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 
+		0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 
+		0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 
+		0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 
+		0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 
+		0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 
+		0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 
+		0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 
+		0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 
+		0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 
+		0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d
+	};
+	
+	public static void addRoundKey(int[][] block){
+		
+	}
+	/*
+	 * Recebe um bloco (16 "bytes") e so subtitui pelo valor do S_BOX
+	 */
+	public static void byteSub(int[][] block) throws Exception{
+		if(block.length != 4 || block[0].length != 4){
+			throw new Exception();
+		}
+		int temp;
+		for(int i = 0; i < 4; i ++){
+			for(int j = 0; j < 4; j ++){
+				block[i][j] = S_BOX[block[i][j] / 0x10][block[i][j] % 0x10];
+			}
+		}
+	}
 
 	public static void shiftRows(int[][] matrix){
 		for(int i = 0; i < matrix.length; i++){
 			rotateLeft(matrix[i], i);
 		}
+	}
+	
+	public static int[][] mixColumn(int[][] block){
+		try {
+			return matrixMultiplication(GALOIS_MATRIX, block);
+		} catch (Exception e) {
+			System.out.println("Erro no mix column");
+			e.printStackTrace();
+		}
+		return null;
 	}
 	
 	public static void rotateLeft(int[] array, int shifts){
@@ -77,8 +146,99 @@ public class AES {
 			array[arrayLength - 1] = temp;
 		}
 	}
+
 	
-	public static int[][] xorMatrixes(int[][] matrix1, int[][] matrix2){
+	
+	/*
+	 * PRIVATE STUFF
+	 */
+	
+	/*
+	 * Funcoes para o key scheduling
+	 */
+	private static void rotWord(int[] word) throws Exception{
+		if(word.length != 4){
+			throw new Exception("RotWord - word tem 4 bytes!");
+		}
+		
+		rotateLeft(word, 1);
+	}
+	
+	private static void subWord(int[] word) throws Exception{
+		if(word.length != 4){
+			throw new Exception("RotWord - word tem 4 bytes!");
+		}
+		
+		for(int i = 0; i < 4; i++){
+			word[i] = S_BOX[word[i] / 0x10][word[i] % 0x10];
+		}
+	}
+	
+	private static int rcon(int round){
+		return RCON_TABLE[round];
+	}
+	
+	private static int[] ek(int[] expandedKey, int offset){
+		return Arrays.copyOfRange(expandedKey, offset, offset + 4);
+	}
+	
+	private static int[] k(int[] originalKey, int offset){
+		return ek(originalKey, offset);
+	}
+	
+//	https://en.wikipedia.org/wiki/Rijndael_key_schedule
+	private static void keyScheduleCore(int[] roundKey, int round){
+		
+		try {
+			rotWord(roundKey);
+			subWord(roundKey);
+			roundKey[0] ^= rcon(round);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
+	private static int[] keySchedule(int[] originalKey){
+		List<Integer> expandedKey = new ArrayList<Integer>();
+		int[] t;
+		
+		for(int i = 0; i < N; i++){
+			expandedKey.add(originalKey[i]);
+		}
+		
+		int roundIteration = 1;
+		
+		while(expandedKey.size() < B){
+			t = Arrays.copyOfRange(Utils.toIntArray(expandedKey), expandedKey.size() - 4, expandedKey.size());
+			keyScheduleCore(t, roundIteration);
+			roundIteration++;
+			for(int i = 0; i < t.length; i++){
+				t[i] ^= expandedKey.get(expandedKey.size() - 16 + i);
+			}
+			for(int i = 0; i < t.length; i++){
+				expandedKey.add(t[i]);
+			}
+			
+			for(int i = 0; i < 3; i++){
+				t = Arrays.copyOfRange(Utils.toIntArray(expandedKey), expandedKey.size() - 4, expandedKey.size());
+				for(int j = 0; j < t.length; j++){
+					t[j] ^= expandedKey.get(expandedKey.size() - 16 + j);
+				}
+				for(int j = 0; j < t.length; j++){
+					expandedKey.add(t[j]);
+				}
+			}
+		}
+		
+		return Utils.toIntArray(expandedKey);
+	}
+	
+	/*
+	 * Funçoes auxiliares ou intermediarias
+	 */
+	private static int[][] xorMatrixes(int[][] matrix1, int[][] matrix2){
 		int matrixResult[][] = new int[matrix1.length][matrix1[0].length];
 		for(int i = 0; i < matrix1.length; i++){
 			for(int j = 0; j < matrix1[i].length; j++){
@@ -88,26 +248,51 @@ public class AES {
 		return matrixResult;
 	}
 	
-	public static int[] vetorialTransformation(int[][] transfMatrix, int[] vector){
-		int[] transformedVector = new int[vector.length];
-		int temp;
+//	é a multiplicação de matrizes, mas com 
+	private static int[][] matrixMultiplication(int[][] matrix1, int[][] matrix2) throws Exception{
 		
-		for(int i = 0; i < vector.length; i++){
-			temp = 0;
-			for(int j = 0; j < vector.length; j++){
-				temp += vector[j] * transfMatrix[i][j];
-			}
-			transformedVector[i] = temp;
+		if(matrix2.length != 4 || matrix2[0].length != 4){
+			throw new Exception();
 		}
 		
-		return transformedVector;
+		int[][] transformedMatrix= new int[matrix2.length][matrix2[0].length];
+		int k = 0;
+		
+		for(int i = 0; i < 4; i++){
+			for(int j = 0; j < 4; j++){
+				transformedMatrix[i][j] = lineXColumn(matrix1, matrix2, i, j);
+			}
+		}
+		
+		return transformedMatrix;
+		
+	}
+	
+	
+	/*
+	 * calcula um elemento na multiplicacao de matriz
+	 * Considera que as matrizes sao compativeis
+	 */
+	
+	private static int lineXColumn(int[][] matrix1, int[][] matrix2, int line, int column){
+		int result = -1;
+		
+		for(int i = 0; i < matrix1.length; i++){
+			
+			if(result < 0 || result > 0xFF){
+				result = matrix1[line][i] * matrix2[i][column];
+			}else{
+				result ^= matrix1[line][i] * matrix2[i][column];
+			}
+		}
+		
+//		aplica uma mascara, pois eh um int, nao dois bytes de verdade
+		return result & 0xFF;
 	}
 	
 	public static void main(String args[]){
-		int[] a = {1, 2, 3, 4, 5, 6, 7};
-		
-		AES.rotateLeft(a, 6);
-		
-		System.out.println(a.toString());
+		int[] originalKey = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+		int[] expandedKey = keySchedule(originalKey);
+		System.out.println(expandedKey);
 	}
 }
