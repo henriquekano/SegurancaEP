@@ -1,5 +1,6 @@
 package src.algorithms;
 
+import java.nio.charset.CharsetEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,12 +19,26 @@ public class AES {
 	private static int[] expandedKey;
 	
 	private static final int KEY_SIZE = 128;
+	
+//	numero de bytes da chave original e do bloco
 	private static final int N = 16;
+	private static final int BLOCK_SIZE = 16;
+	
+//	numero de bytes da chave expandida
 	private static final int B = 176;
 	
-	enum OP_MODE{
+	private static final int MATRIXES_COLUMN_NUMBER = 4;
+	private static final int MATRIXES_ROWS_NUMBER = 4;
+	private static OpMode operationMode = OpMode.EBC;
+	
+	enum OpMode{
 		CBC,
 		EBC
+	};
+	
+	enum PaddingType{
+		PKCS,
+		NIST
 	};
 
 //	https://en.wikipedia.org/wiki/Rijndael_S-box
@@ -100,12 +115,98 @@ public class AES {
 		0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d
 	};
 	
-	public static void addRoundKey(int[][] block){
+	public static String encrypt(String message, String key, OpMode operationMode, PaddingType paddingType){
+		List<Integer> encryptedMessage = new ArrayList<Integer>();
+		int[] originalMessage = Utils.stringToIntByteArray(message);
 		
+//		pra ver se naao vai ter um bloco com padding...
+		int extraRound = (float)originalMessage.length % (float)BLOCK_SIZE > 0.0 ? 1 : 0;
+		
+		if(operationMode.equals(OpMode.EBC)){
+			for(int i = 0; i < originalMessage.length / BLOCK_SIZE + extraRound; i++){
+				int [] blockBuffer;
+				if(i * BLOCK_SIZE + BLOCK_SIZE > originalMessage.length){
+					blockBuffer = addPadding(
+							Arrays.copyOfRange(originalMessage, 
+							i * BLOCK_SIZE, 
+							originalMessage.length), 
+							BLOCK_SIZE, 
+							paddingType);
+				}else{
+					blockBuffer = Arrays.copyOfRange(originalMessage, 
+							i * BLOCK_SIZE, 
+							i * BLOCK_SIZE + BLOCK_SIZE);
+				}
+				try {
+					encryptBlock(
+							Utils.toMatrix(
+								blockBuffer, 
+								MATRIXES_ROWS_NUMBER, 
+								MATRIXES_COLUMN_NUMBER), 
+							originalMessage
+					);
+				} catch (Exception e) {
+					System.out.println("erro no AES");
+					e.printStackTrace();
+					return null;
+				}
+				
+				for(int j = 0; j < blockBuffer.length; j++){
+					encryptedMessage.add(blockBuffer[i]);
+				}
+			}
+		}
+		int[] encryptedMessageIntArray = Utils.toIntArray(encryptedMessage);
+		return Utils.intByteArrayToString(encryptedMessageIntArray);
 	}
-	/*
-	 * Recebe um bloco (16 "bytes") e so subtitui pelo valor do S_BOX
-	 */
+	
+	public static int[] encryptBlock(int[][] block, int[] originalKey){
+		int[] expandedKey = keySchedule(originalKey);
+		int round = 0;
+		try {
+			addRoundKey(block, Utils.toMatrix(
+					Arrays.copyOfRange(expandedKey, round * N, round * N + N), 
+					MATRIXES_ROWS_NUMBER, 
+					MATRIXES_COLUMN_NUMBER)
+			);
+			
+			for(int i = 0; i < 9; i++){
+				round++;
+				byteSub(block);
+				mixColumn(block);
+				addRoundKey(block, Utils.toMatrix(
+						Arrays.copyOfRange(expandedKey, round * N, round * N + N), 
+						MATRIXES_ROWS_NUMBER, 
+						MATRIXES_COLUMN_NUMBER)
+				);
+			}
+			
+			round++;
+			byteSub(block);
+			shiftRows(block);
+			addRoundKey(block, Utils.toMatrix(
+					Arrays.copyOfRange(expandedKey, round * N, round * N + N), 
+					MATRIXES_ROWS_NUMBER, 
+					MATRIXES_COLUMN_NUMBER)
+			);
+		} catch (Exception e) {
+			System.out.println("Algum erro na encryptacao do bloco no AES...");
+			e.printStackTrace();
+		}
+		
+		
+		return null;
+	}
+	
+	public static void addRoundKey(int[][] block, int[][] roundKey){
+		xorMatrixes(block, roundKey);
+	}
+	
+	public static void addKey(int[][] block, int[][] key){
+		xorMatrixes(block, key);
+	}
+	
+//	  Recebe um bloco (16 "bytes") e so subtitui pelo valor do S_BOX
 	public static void byteSub(int[][] block) throws Exception{
 		if(block.length != 4 || block[0].length != 4){
 			throw new Exception();
@@ -152,6 +253,33 @@ public class AES {
 	/*
 	 * PRIVATE STUFF
 	 */
+	
+	/*
+	 * Fuçoes do modo de operação
+	 */
+	public static int[] addPadding(int[] block, int blockSize, PaddingType paddingType){
+		
+		int[] newBlock = new int[blockSize];
+		int endOfBlock = block.length;
+		
+		for(int i = 0; i < endOfBlock; i++){
+			newBlock[i] = block[i];
+		}
+		
+		if(paddingType.equals(PaddingType.NIST)){
+			for(int i = endOfBlock; i < blockSize; i++){
+				newBlock[i] = blockSize - block.length;
+			}
+			
+		}else if(paddingType.equals(PaddingType.PKCS)){
+			newBlock[endOfBlock] = 1;
+			for(int i = endOfBlock + 1; i < blockSize; i++){
+				newBlock[i] = 0;
+			}
+		}
+		
+		return newBlock;
+	}
 	
 	/*
 	 * Funcoes para o key scheduling
@@ -248,7 +376,7 @@ public class AES {
 		return matrixResult;
 	}
 	
-//	é a multiplicação de matrizes, mas com 
+//	é a multiplicação de matrizes, mas com xor ao inves de soma
 	private static int[][] matrixMultiplication(int[][] matrix1, int[][] matrix2) throws Exception{
 		
 		if(matrix2.length != 4 || matrix2[0].length != 4){
@@ -267,13 +395,9 @@ public class AES {
 		return transformedMatrix;
 		
 	}
-	
-	
-	/*
-	 * calcula um elemento na multiplicacao de matriz
-	 * Considera que as matrizes sao compativeis
-	 */
-	
+
+//	  calcula um elemento na multiplicacao de matriz
+//	  Considera que as matrizes sao compativeis
 	private static int lineXColumn(int[][] matrix1, int[][] matrix2, int line, int column){
 		int result = -1;
 		
@@ -286,13 +410,14 @@ public class AES {
 			}
 		}
 		
-//		aplica uma mascara, pois eh um int, nao dois bytes de verdade
-		return result & 0xFF;
+		return result;
 	}
 	
 	public static void main(String args[]){
-		int[] originalKey = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-		int[] expandedKey = keySchedule(originalKey);
-		System.out.println(expandedKey);
+		int[] originalKey = {0xF, 0x5, 0xA, 0xB, 0x1};
+//		int[] expandedKey = keySchedule(originalKey);
+//		System.out.println(expandedKey);
+		
+		System.out.println(Utils.toHexString(originalKey));
 	}
 }
