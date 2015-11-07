@@ -112,7 +112,7 @@ public class FrameDSA extends JFrame {
 		String hashAlgorithm = HMAC_ALGORITHMS().get((String)getCbox_mode().getSelectedItem());
 				
 		if(message != null && privatekey != null && hashAlgorithm != null){
-			Optional<byte[]> signature = Dsa.sign(privatekey, message, hashAlgorithm);
+			Optional<byte[]> signature = DSA.sign(privatekey, message, hashAlgorithm);
 			if(signature.isPresent()){
 				JTextArea signatureTextArea = getTa_signature();
 				signatureTextArea.setText(DatatypeConverter.printHexBinary(signature.get()));
@@ -132,7 +132,7 @@ public class FrameDSA extends JFrame {
 		System.out.println("Hash: " + hash);
 
 		if(signature != null && publickey != null && hashAlgorithm != null){
-			Optional<byte[]> output = Dsa.sign(publickey, signature, hashAlgorithm);
+			Optional<byte[]> output = DSA.sign(publickey, signature, hashAlgorithm);
 			if(output.isPresent()){
 				JTextArea macTextArea = getTa_signature();
 				macTextArea.setText(DatatypeConverter.printHexBinary(output.get()));

@@ -1,70 +1,120 @@
 package src.algorithms;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
+import java.security.PublicKey;
+import java.security.PrivateKey;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 import java.util.Optional;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
 
 public class DSA {
-	
-	public static Optional<byte[]> sign(byte[] message, PrivateKey key){
-//		https://docs.oracle.com/javase/7/docs/technotes/guides/security/StandardNames.html#Cipher
+	public static byte[] hexStringToByteArray(String s) {
+	    int len = s.length();
+	    byte[] data = new byte[len / 2];
+	    for (int i = 0; i < len; i += 2) {
+	        data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+	                             + Character.digit(s.charAt(i+1), 16));
+	    }
+	    return data;
+	}
+
+	public static Optional<byte[]> sign(String key, String message, String algorithm){
 		try {
-			Signature dsa = Signature.getInstance("SHA256withRSA");
-			dsa.initSign(key);
+//			int keyLength = 1024;
+//			
+//			KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DSA");
+//			keyGen.initialize(keyLength);
+//			KeyPair keyPair = keyGen.generateKeyPair();
+//			byte[] publickey = keyPair.getPublic().getEncoded().toString().getBytes();
+//			byte[] privatekey = keyPair.getPrivate().getEncoded().toString().getBytes();
+//			String publickeystring = new String(publickey, Charset.forName("UTF-8"));
+//			String privatekeystring = new String(privatekey, Charset.forName("UTF-8"));
+//			System.out.println("publickey: "+publickeystring);
+//			System.out.println("privatekey: "+privatekeystring);
 			
-			return Optional.of(dsa.sign());
+		
+			X509EncodedKeySpec keySpec = new X509EncodedKeySpec(key.getBytes());
+//			SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(), algorithm);
+			KeyFactory keyFactory = KeyFactory.getInstance("DSA");
+			PrivateKey privatekey = keyFactory.generatePrivate(keySpec);
+			
+//			nao sei se da certo
+			System.out.println("privatekey: "+privatekey.toString());			
+			
+			Signature sig = Signature.getInstance(algorithm+"WithDSA");
+			sig.initSign(privatekey);
+			byte[] byteMessage = message.getBytes("UTF8"); 
+			sig.update(byteMessage);
+			byte[] signature = sig.sign();
+			return Optional.of(signature);
+//			return Optional.of("SEI LA".getBytes());
 		} catch (NoSuchAlgorithmException e) {
-			System.out.println("Algoritmo errado no DSA!");
+			System.out.println("Algoritmo errado!");
 			e.printStackTrace();
-		} catch (InvalidKeyException e) {
-			System.out.println("Chave invalida na assinatura do DSA");
+		} catch (UnsupportedEncodingException e) {
+			System.out.println("Encoding nï¿½o suportado!");
 			e.printStackTrace();
 		} catch (SignatureException e) {
-			System.out.println("Erro na assinatura no DSA!");
+			System.out.println("Erro nï¿½ assinatura!");
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			System.out.println("Chave privada invï¿½lida!");
+			e.printStackTrace();
+		} catch (InvalidKeySpecException e) {
+			System.out.println("KeySpec invï¿½lido!");
+			e.printStackTrace();
+		}
+		
+		return Optional.empty();
+	}
+
+	public static Optional<byte[]> verify(String key, String signature, String algorithm){
+
+		try {
+			// tenho que reutilizar aquele keypair
+			KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+			keyGen.initialize(1024);
+			KeyPair publickey = keyGen.generateKeyPair();
+
+
+
+			byte[] byteSignature = hexStringToByteArray(signature);
+
+			Signature sig = Signature.getInstance(algorithm+"WithRSA");
+			String output;
+			
+			sig.initVerify(publickey.getPublic());
+			// sig.update(plainText);
+			
+			if (sig.verify(byteSignature)){
+				output = "Assinatura verificada";
+			} else {
+				output = "Assinatura falsa!!!";
+			}
+			
+			return Optional.of(output.getBytes());
+		} catch (NoSuchAlgorithmException e) {
+			System.out.println("Algoritmo errado!");
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			System.out.println("A chave do HMAC ï¿½ incopatï¿½vel!");
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			System.out.println("Erro na assinatura!");
 			e.printStackTrace();
 		}
 		return Optional.empty();
 	}
-	
-	public static boolean verify(byte[] message, Signature signature, PublicKey key){
-//		https://docs.oracle.com/javase/7/docs/technotes/guides/security/StandardNames.html#Cipher
-		try {
-			signature.initVerify(key);
-			return signature.verify(message);
-		} catch (SignatureException e) {
-			System.out.println("Erro na  verificacao da assinatura do DSA");
-			e.printStackTrace();
-		} catch (InvalidKeyException e) {
-			System.out.println("Chave publica usada na verificacao do DSA invalida!");
-			e.printStackTrace();
-		}
-		return false;
-	}
-//	
-//	public static KeyPair createKeyPair(){
-//		try {
-//			KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-//			KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance("RSA");
-//			keyGenerator.initialize(2048, new SecureRandom());
-//			return keyGenerator.generateKeyPair();
-//		} catch (NoSuchAlgorithmException e) {
-//			System.out.println("Erro na criação de chaves da RSA");
-//			e.printStackTrace();
-//		}
-//		
-//		return null;
-//	}
 }
