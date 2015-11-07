@@ -1,34 +1,27 @@
 package src.gui;
 
-import src.algorithms.*;
-
-import java.awt.BorderLayout;
-
-import javax.swing.ButtonGroup;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JFrame;
-import javax.swing.JButton;
-import java.awt.Rectangle;
-import java.awt.Dimension;
-import javax.swing.JLabel;
-import javax.swing.JTextField;
-
-import java.awt.GridBagLayout;
 import java.awt.Color;
-import javax.swing.JRadioButton;
 import java.awt.Font;
-import javax.swing.border.LineBorder;
-import javax.swing.border.MatteBorder;
-import javax.swing.border.TitledBorder;
-import javax.swing.UIManager;
-import javax.swing.JTextPane;
-import javax.swing.JEditorPane;
-import javax.swing.JScrollPane;
+import java.awt.Rectangle;
+import java.io.UnsupportedEncodingException;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.util.Optional;
+
+import javax.crypto.Cipher;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
-import javax.swing.JComboBox;
-import javax.swing.DefaultComboBoxModel;
+import javax.swing.border.LineBorder;
+import javax.swing.border.TitledBorder;
+import javax.xml.bind.DatatypeConverter;
+
+import src.algorithms.RSA;
+import src.algorithms.utils.Utils;
 
 public class FrameRSA extends JFrame {
 	
@@ -47,6 +40,11 @@ public class FrameRSA extends JFrame {
 	private JTextArea ta_publickey;
 	private JTextArea ta_plantext;
 	private JTextArea ta_cyphertext;
+	
+	private static PublicKey publicKey;
+	private static PrivateKey privateKey;
+	private byte[] encryptedMessage;
+	
 	/**
 	 * This is the default constructor
 	 */
@@ -86,16 +84,51 @@ public class FrameRSA extends JFrame {
 
 
 	private void rsa_generatePairKey() {
-	//  TODO
+		JTextArea publicKeyTextArea = getTa_publickey();
+		JTextArea privateKeyTextArea = getTa_privatekey();
+		
+		KeyPair keyPair = RSA.createKeyPair();
+		PublicKey publicKey = keyPair.getPublic();
+		PrivateKey privateKey = keyPair.getPrivate();
+		
+		this.publicKey = publicKey;
+		this.privateKey = privateKey;
+		
+		publicKeyTextArea.setText(DatatypeConverter.printHexBinary(publicKey.getEncoded()));
+		privateKeyTextArea.setText(DatatypeConverter.printHexBinary(privateKey.getEncoded()));
+		
+		
 	}
 	
 	private void rsa_encrypt() {
-//  TODO
+		JTextArea mesageTextArea = getTa_plantext();
+		JTextArea encryptedTextArea = getTa_cyphertext();
+		
+		if(!mesageTextArea.getText().isEmpty()){
+			Optional<byte[]> encryptedMessage = RSA.encrypt(mesageTextArea.getText().getBytes(), publicKey);
+			
+			if(encryptedMessage.isPresent()){
+				encryptedTextArea.setText(Utils.toHexString(encryptedMessage.get()));
+				this.encryptedMessage = encryptedMessage.get();
+			}
+		}
+		
 	}
 
 
 	private void rsa_decrypt() {
-	//  TODO
+		JTextArea mesageTextArea = getTa_plantext();
+		JTextArea encryptedTextArea = getTa_cyphertext();
+		
+		if(!encryptedTextArea.getText().isEmpty()){
+			Optional<byte[]> decryptedMessage = Optional.empty();
+			
+			decryptedMessage = RSA.decrypt(this.encryptedMessage, privateKey);
+			
+			if(decryptedMessage.isPresent()){
+				mesageTextArea.setText(new String(decryptedMessage.get()));
+			}
+		}
 	}
 
 	/**
