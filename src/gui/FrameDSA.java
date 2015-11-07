@@ -10,6 +10,9 @@ import javax.swing.JPanel;
 import javax.swing.JFrame;
 import javax.swing.JButton;
 import java.awt.Rectangle;
+import java.util.Optional;
+import java.util.HashMap;
+import java.util.Map;
 import java.awt.Dimension;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
@@ -21,6 +24,8 @@ import java.awt.Font;
 import javax.swing.border.LineBorder;
 import javax.swing.border.MatteBorder;
 import javax.swing.border.TitledBorder;
+import javax.xml.bind.DatatypeConverter;
+
 import javax.swing.UIManager;
 import javax.swing.JTextPane;
 import javax.swing.JEditorPane;
@@ -96,11 +101,43 @@ public class FrameDSA extends JFrame {
 	}
 	
 	private void dsa_sign() {
-//  TODO
+//		String message = getTa_message().getText();
+//		String privatekey = getTa_privatekey().getText();
+		
+		
+		String message = "Mensagem meio grande ASDFADFADFADFADFADFAFD";
+		String privatekey = "[B@3d6da9d";
+		
+		
+		String hashAlgorithm = HMAC_ALGORITHMS().get((String)getCbox_mode().getSelectedItem());
+				
+		if(message != null && privatekey != null && hashAlgorithm != null){
+			Optional<byte[]> signature = Dsa.sign(privatekey, message, hashAlgorithm);
+			if(signature.isPresent()){
+				JTextArea signatureTextArea = getTa_signature();
+				signatureTextArea.setText(DatatypeConverter.printHexBinary(signature.get()));
+			}
+		}
 	}
 
 
 	private void dsa_verify() {
+		String signature = getTa_signature().getText();
+		String publickey = getTa_publickey().getText();
+		String hash = getTa_hash().getText();
+		String hashAlgorithm = HMAC_ALGORITHMS().get((String)getCbox_mode().getSelectedItem());
+		
+		System.out.println("Chave privada: " + signature);
+		System.out.println("Algoritmo: " + publickey);
+		System.out.println("Hash: " + hash);
+
+		if(signature != null && publickey != null && hashAlgorithm != null){
+			Optional<byte[]> output = Dsa.sign(publickey, signature, hashAlgorithm);
+			if(output.isPresent()){
+				JTextArea macTextArea = getTa_signature();
+				macTextArea.setText(DatatypeConverter.printHexBinary(output.get()));
+			}
+		}
 	//  TODO
 	}
 
@@ -252,11 +289,21 @@ public class FrameDSA extends JFrame {
 	private JComboBox getCbox_mode() {
 		if (cbox_mode == null) {
 			cbox_mode = new JComboBox();
-			cbox_mode.setModel(new DefaultComboBoxModel(new String[] {"SHA-256", "SHA-1"}));
+			String[] algorithms = HMAC_ALGORITHMS().keySet().toArray(new String[HMAC_ALGORITHMS().size()]);
+			cbox_mode.setModel(new DefaultComboBoxModel<String>(algorithms));
 			cbox_mode.setFont(new Font("Tahoma", Font.BOLD, 14));
 			cbox_mode.setBounds(90, 402, 91, 29);
 		}
 		return cbox_mode;
 	}
+
+	private static final Map<String, String> HMAC_ALGORITHMS(){
+		Map<String, String> map = new HashMap<String, String>();
+		map.put("SHA-1", "SHA1");
+		map.put("SHA-256", "SHA256");
+		
+		return map;
+	}
+
 
 }  //  @jve:decl-index=0:visual-constraint="10,10"
