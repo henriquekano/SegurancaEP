@@ -1,8 +1,6 @@
 package src.algorithms.utils;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.IntBuffer;
+import java.math.BigInteger;
 import java.util.List;
 
 import javax.xml.bind.DatatypeConverter;
@@ -11,6 +9,10 @@ public class Utils {
 	
 	public static String toHexString(byte[] byteArray){
 		return DatatypeConverter.printHexBinary(byteArray);
+	}
+	
+	public static String toHexString(String string) {
+	    return String.format("%x", new BigInteger(1, string.getBytes()));
 	}
 	
 	public static String toHexString(int[] intByteArray){
@@ -33,11 +35,14 @@ public class Utils {
 	}
 	
 	public static String intByteArrayToString(int[] intByteArray){
-		byte[] bytes = new byte[intByteArray.length];
+		String returnString = "";
 		for(int i = 0; i < intByteArray.length; i++){
-			bytes[i] = (byte)(intByteArray[i]);
+			if(intByteArray[i] < 0x10){
+				returnString += "0";
+			}
+			returnString += Integer.toHexString(intByteArray[i]);
 		}
-		return new String(bytes);
+		return returnString;
 	}
 	
 	public static int[][] toMatrix(int[] array, int rows, int columns) throws Exception{
@@ -48,11 +53,25 @@ public class Utils {
 			
 			for(int i = 0; i < rows; i++){
 				for(int j = 0; j < columns; j++){
-					matrix[i][j] = array[i * columns + j];
+					matrix[j][i] = array[i * columns + j];
 				}
 			}
 			return matrix;
 		}
+	}
+	
+	public static int[] toArray(int[][] matrix){
+		
+		int[] array= new int[matrix.length * matrix[0].length];
+		int rows = matrix.length;
+		int columns = matrix[0].length;
+		
+		for(int i = 0; i < rows; i++){
+			for(int j = 0; j < columns; j++){
+				array[j * columns + i] = matrix[i][j];
+			}
+		}
+		return array;
 	}
 	
 	public static int[] toIntArray(List<Integer> list){
@@ -63,4 +82,24 @@ public class Utils {
 		
 		return array;
 	}
+	
+	public static int[] hexStringToIntArray(String hexString){
+		int[] intArray = new int[hexString.length() / 2];
+		String[] hexValues = hexString.split("");
+		for(int i = 0; i < hexString.length() / 2; i++){
+			intArray[i] = Integer.parseInt(hexValues[2 * i]  + hexValues[2 * i + 1] ,16);
+		}
+		
+		return intArray;
+	}
+	
+	public static void printMatrix(int[][] matrix){
+		for(int i = 0; i < matrix.length; i++){
+			for(int j = 0; j < matrix.length; j++){
+				System.out.print(Integer.toHexString(matrix[i][j]) + " ");
+			}
+			System.out.println();
+		}
+	}
+	
 }
