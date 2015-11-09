@@ -71,7 +71,6 @@ public class RSA {
 	
 	public static KeyPair createKeyPair(){
 		try {
-			KeyFactory keyFactory = KeyFactory.getInstance("RSA");
 			KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance("RSA");
 			keyGenerator.initialize(2048, new SecureRandom());
 			return keyGenerator.generateKeyPair();

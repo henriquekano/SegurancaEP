@@ -91,8 +91,8 @@ public class FrameRSA extends JFrame {
 		PublicKey publicKey = keyPair.getPublic();
 		PrivateKey privateKey = keyPair.getPrivate();
 		
-		this.publicKey = publicKey;
-		this.privateKey = privateKey;
+		FrameRSA.publicKey = publicKey;
+		FrameRSA.privateKey = privateKey;
 		
 		publicKeyTextArea.setText(DatatypeConverter.printHexBinary(publicKey.getEncoded()));
 		privateKeyTextArea.setText(DatatypeConverter.printHexBinary(privateKey.getEncoded()));

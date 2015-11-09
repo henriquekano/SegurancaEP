@@ -1,118 +1,107 @@
 package src.algorithms;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
-import java.security.KeyFactory;
 import java.security.KeyPair;
-import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.Signature;
-import java.security.SignatureException;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Optional;
 
-import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 public class DSA {
-	public static byte[] hexStringToByteArray(String s) {
-	    int len = s.length();
-	    byte[] data = new byte[len / 2];
-	    for (int i = 0; i < len; i += 2) {
-	        data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-	                             + Character.digit(s.charAt(i+1), 16));
-	    }
-	    return data;
-	}
-
-	public static Optional<byte[]> sign(String key, String message, String algorithm){
+	public static KeyPair createKeyPair(){
 		try {
-//			int keyLength = 1024;
-//			
-//			KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DSA");
-//			keyGen.initialize(keyLength);
-//			KeyPair keyPair = keyGen.generateKeyPair();
-//			byte[] publickey = keyPair.getPublic().getEncoded().toString().getBytes();
-//			byte[] privatekey = keyPair.getPrivate().getEncoded().toString().getBytes();
-//			String publickeystring = new String(publickey, Charset.forName("UTF-8"));
-//			String privatekeystring = new String(privatekey, Charset.forName("UTF-8"));
-//			System.out.println("publickey: "+publickeystring);
-//			System.out.println("privatekey: "+privatekeystring);
-			
-		
-			X509EncodedKeySpec keySpec = new X509EncodedKeySpec(key.getBytes());
-//			SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(), algorithm);
-			KeyFactory keyFactory = KeyFactory.getInstance("DSA");
-			PrivateKey privatekey = keyFactory.generatePrivate(keySpec);
-			
-//			nao sei se da certo
-			System.out.println("privatekey: "+privatekey.toString());			
-			
-			Signature sig = Signature.getInstance(algorithm+"WithDSA");
-			sig.initSign(privatekey);
-			byte[] byteMessage = message.getBytes("UTF8"); 
-			sig.update(byteMessage);
-			byte[] signature = sig.sign();
-			return Optional.of(signature);
-//			return Optional.of("SEI LA".getBytes());
+			KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance("RSA");
+			keyGenerator.initialize(1024, new SecureRandom());
+			return keyGenerator.generateKeyPair();
 		} catch (NoSuchAlgorithmException e) {
 			System.out.println("Algoritmo errado!");
 			e.printStackTrace();
-		} catch (UnsupportedEncodingException e) {
-			System.out.println("Encoding nï¿½o suportado!");
+		}
+		
+		return null;
+	}
+	
+	public static byte[] getDigest(byte[] byteMessage, String algorithm){
+		try {
+			MessageDigest alg_digest = MessageDigest.getInstance(algorithm);
+            alg_digest.update(byteMessage);
+            byte[] digest = alg_digest.digest(byteMessage);
+            return digest;
+		} catch (NoSuchAlgorithmException e) {
+			System.out.println("Algoritmo errado!");
 			e.printStackTrace();
-		} catch (SignatureException e) {
-			System.out.println("Erro nï¿½ assinatura!");
+		}
+		
+		return null;
+	}
+
+	public static Optional<byte[]> sign(PrivateKey privateKey, byte[] message, String algorithm){
+		try {			
+			Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.ENCRYPT_MODE, privateKey);
+   
+			byte[] digest = getDigest(message, algorithm);
+            byte[] signature = cipher.doFinal(digest);
+			
+			return Optional.of(signature);
+		} catch (NoSuchAlgorithmException e) {
+			System.out.println("Algoritmo errado!");
 			e.printStackTrace();
 		} catch (InvalidKeyException e) {
-			System.out.println("Chave privada invï¿½lida!");
+			System.out.println("Chave privada invalida!");
 			e.printStackTrace();
-		} catch (InvalidKeySpecException e) {
-			System.out.println("KeySpec invï¿½lido!");
+		} catch (NoSuchPaddingException e) {
+			System.out.println("Nao tem padding!");
+			e.printStackTrace();
+		} catch (IllegalBlockSizeException e) {
+			System.out.println("Tamanho de bloco errado!");
+			e.printStackTrace();
+		} catch (BadPaddingException e) {
+			System.out.println("Padding não permitido!");
 			e.printStackTrace();
 		}
 		
 		return Optional.empty();
 	}
 
-	public static Optional<byte[]> verify(String key, String signature, String algorithm){
+	public static Optional<String> verify(PublicKey publicKey, byte[] digest, byte[] signature, String algorithm){
 
-		try {
-			// tenho que reutilizar aquele keypair
-			KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
-			keyGen.initialize(1024);
-			KeyPair publickey = keyGen.generateKeyPair();
+		try {			
+			Cipher cipher = Cipher.getInstance("RSA");
+			cipher.init(Cipher.DECRYPT_MODE, publicKey);
+            byte[] decrypted_digest =  cipher.doFinal(signature);
+            
+            String output;
 
-
-
-			byte[] byteSignature = hexStringToByteArray(signature);
-
-			Signature sig = Signature.getInstance(algorithm+"WithRSA");
-			String output;
-			
-			sig.initVerify(publickey.getPublic());
-			// sig.update(plainText);
-			
-			if (sig.verify(byteSignature)){
-				output = "Assinatura verificada";
-			} else {
-				output = "Assinatura falsa!!!";
-			}
-			
-			return Optional.of(output.getBytes());
+            if (Arrays.equals(decrypted_digest, digest)){
+                output = "Assinatura verificada e correta!";
+            } else {
+                output = "Assinatura falsa!";
+            }
+			return Optional.of(output);
 		} catch (NoSuchAlgorithmException e) {
 			System.out.println("Algoritmo errado!");
 			e.printStackTrace();
 		} catch (InvalidKeyException e) {
-			System.out.println("A chave do HMAC ï¿½ incopatï¿½vel!");
+			System.out.println("Chave inválida!");
 			e.printStackTrace();
-		} catch (SignatureException e) {
-			System.out.println("Erro na assinatura!");
+		} catch (NoSuchPaddingException e) {
+			System.out.println("Não tem padding!");
+			e.printStackTrace();
+		} catch (IllegalBlockSizeException e) {
+			System.out.println("Tamanho de bloco nao permitido!");
+			e.printStackTrace();
+		} catch (BadPaddingException e) {
+			System.out.println("Padding não permitido!");
 			e.printStackTrace();
 		}
 		return Optional.empty();

@@ -10,6 +10,9 @@ import javax.swing.JPanel;
 import javax.swing.JFrame;
 import javax.swing.JButton;
 import java.awt.Rectangle;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.Optional;
 import java.util.HashMap;
 import java.util.Map;
@@ -56,6 +59,9 @@ public class FrameDSA extends JFrame {
 	private JTextArea ta_signature;
 	private JComboBox cbox_mode;
 
+	private static PublicKey publicKey;
+	private static PrivateKey privateKey;
+
 	/**
 	 * This is the default constructor
 	 */
@@ -73,6 +79,22 @@ public class FrameDSA extends JFrame {
 		this.setSize(620, 500);
 		this.setContentPane(getJContentPane());
 		this.setTitle("DSA Signature");
+	}
+	
+	/**
+	 * This methos converts a string representing bytes to bytes
+	 * 
+	 * @param s
+	 * @return
+	 */
+	public static byte[] hexStringToByteArray(String s) {
+	    int len = s.length();
+	    byte[] data = new byte[len / 2];
+	    for (int i = 0; i < len; i += 2) {
+	        data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+	                             + Character.digit(s.charAt(i+1), 16));
+	    }
+	    return data;
 	}
 
 	/**
@@ -101,21 +123,31 @@ public class FrameDSA extends JFrame {
 	}
 	
 	private void dsa_sign() {
-//		String message = getTa_message().getText();
-//		String privatekey = getTa_privatekey().getText();
-		
-		
-		String message = "Mensagem meio grande ASDFADFADFADFADFADFAFD";
-		String privatekey = "[B@3d6da9d";
-		
-		
+		String message = getTa_message().getText();
+		byte[] byteMessage = message.getBytes();
 		String hashAlgorithm = HMAC_ALGORITHMS().get((String)getCbox_mode().getSelectedItem());
+		
+		KeyPair keyPair = DSA.createKeyPair();
+		PublicKey publicKey = keyPair.getPublic();
+		PrivateKey privateKey = keyPair.getPrivate();
+		
+		FrameDSA.publicKey = publicKey;
+		FrameDSA.privateKey = privateKey;
+		
+		JTextArea publicKeyTextArea = getTa_publickey();
+		JTextArea privateKeyTextArea = getTa_privatekey();
+		publicKeyTextArea.setText(DatatypeConverter.printHexBinary(publicKey.getEncoded()));
+		privateKeyTextArea.setText(DatatypeConverter.printHexBinary(privateKey.getEncoded()));
 				
-		if(message != null && privatekey != null && hashAlgorithm != null){
-			Optional<byte[]> signature = DSA.sign(privatekey, message, hashAlgorithm);
+		if(message != null && privateKey != null && hashAlgorithm != null){
+			Optional<byte[]> signature = DSA.sign(privateKey, byteMessage, hashAlgorithm);
 			if(signature.isPresent()){
 				JTextArea signatureTextArea = getTa_signature();
 				signatureTextArea.setText(DatatypeConverter.printHexBinary(signature.get()));
+				
+				byte[] digest = DSA.getDigest(byteMessage, hashAlgorithm);
+				JTextArea hashTextArea = getTa_hash();
+				hashTextArea.setText(DatatypeConverter.printHexBinary(digest));
 			}
 		}
 	}
@@ -123,22 +155,17 @@ public class FrameDSA extends JFrame {
 
 	private void dsa_verify() {
 		String signature = getTa_signature().getText();
-		String publickey = getTa_publickey().getText();
-		String hash = getTa_hash().getText();
+		byte[] byteSignature = hexStringToByteArray(signature);
+		String digest = getTa_hash().getText();
+		byte[] byteDigest = hexStringToByteArray(digest);
 		String hashAlgorithm = HMAC_ALGORITHMS().get((String)getCbox_mode().getSelectedItem());
-		
-		System.out.println("Chave privada: " + signature);
-		System.out.println("Algoritmo: " + publickey);
-		System.out.println("Hash: " + hash);
 
-		if(signature != null && publickey != null && hashAlgorithm != null){
-			Optional<byte[]> output = DSA.sign(publickey, signature, hashAlgorithm);
+		if(signature != null && publicKey != null && hashAlgorithm != null){
+			Optional<String> output = DSA.verify(publicKey, byteDigest, byteSignature, hashAlgorithm);
 			if(output.isPresent()){
-				JTextArea macTextArea = getTa_signature();
-				macTextArea.setText(DatatypeConverter.printHexBinary(output.get()));
+				JOptionPane.showMessageDialog(null, output.get());
 			}
 		}
-	//  TODO
 	}
 
 	
