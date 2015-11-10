@@ -93,6 +93,15 @@ public class Utils {
 		return intArray;
 	}
 	
+	public static String hexStringToClearString(String hexString){
+		String output = "";
+		for (int i = 0; i < hexString.length(); i+=2) {
+	        String str = hexString.substring(i, i+2);
+	        output += (char)Integer.parseInt(str, 16);
+	    }
+		return output;
+	}
+	
 	public static void printMatrix(int[][] matrix){
 		for(int i = 0; i < matrix.length; i++){
 			for(int j = 0; j < matrix.length; j++){
@@ -100,6 +109,7 @@ public class Utils {
 			}
 			System.out.println();
 		}
+		System.out.println();
 	}
 	
 }
