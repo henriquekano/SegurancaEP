@@ -1,34 +1,26 @@
 package src.gui;
 
-import src.algorithms.*;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Rectangle;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.Map;
 
-import java.awt.BorderLayout;
-
-import javax.swing.ButtonGroup;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JFrame;
-import javax.swing.JButton;
-import java.awt.Rectangle;
-import java.awt.Dimension;
-import javax.swing.JLabel;
-import javax.swing.JTextField;
-
-import java.awt.GridBagLayout;
-import java.awt.Color;
-import javax.swing.JRadioButton;
-import java.awt.Font;
-import javax.swing.border.LineBorder;
-import javax.swing.border.MatteBorder;
-import javax.swing.border.TitledBorder;
-import javax.swing.UIManager;
-import javax.swing.JTextPane;
-import javax.swing.JEditorPane;
-import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
-import javax.swing.JComboBox;
-import javax.swing.DefaultComboBoxModel;
+import javax.swing.border.LineBorder;
+import javax.swing.border.TitledBorder;
+
+import src.algorithms.AES;
 
 public class FrameAES extends JFrame {
 	
@@ -49,6 +41,10 @@ public class FrameAES extends JFrame {
 	private JTextArea ta_plantext;
 	private JTextArea ta_cyphertext;
 	private JComboBox cbox_mode;
+	
+	private static final String[] OPERATION_MODES = {"ECB", "CBC", "CTR"};
+	
+	private Map<String, AES.OpMode> operationModesMap;
 	/**
 	 * This is the default constructor
 	 */
@@ -63,6 +59,13 @@ public class FrameAES extends JFrame {
 	 * @return void
 	 */
 	private void initialize() {
+		this.operationModesMap = new HashMap<String, AES.OpMode>();
+		this.operationModesMap.put("ECB", AES.OpMode.ECB);
+		this.operationModesMap.put("CBC", AES.OpMode.CBC);
+		this.operationModesMap.put("CTR", AES.OpMode.CTR);
+		
+		
+		
 		this.setSize(620, 500);
 		this.setContentPane(getJContentPane());
 		this.setTitle("AES Encryption");
@@ -93,22 +96,81 @@ public class FrameAES extends JFrame {
 	}
 	
 	private void aes_generateIV() {
-	//  TODO
+		 SecureRandom random = new SecureRandom();
+		 String initializationVector = new BigInteger(128, random).toString(32);
+		 
+		 System.out.println(initializationVector.length());
+		 JTextArea ivTextArea = getTa_iv();
+		 
+		 ivTextArea.setText(initializationVector);
 	}
 
 
 	private void aes_generateKey() {
-	//  TODO
+		SecureRandom random = new SecureRandom();
+		String key = new BigInteger(128, random).toString(32);
+		 
+		JTextArea keyTextArea = getTa_key();
+		 
+		keyTextArea.setText(key);
 	}
 
 	
 	private void aes_encrypt() {
-//  TODO
+		JTextArea messageTextArea = getTa_plantext();
+		JTextArea keyTextArea = getTa_key();
+		JTextArea encryptedMessageTextArea = getTa_cyphertext();
+		JTextArea initializationVectorTextArea = getTa_iv();
+		JComboBox<String> operationModeCombo = getCbox_mode();
+		
+		if(!messageTextArea.getText().isEmpty() && !keyTextArea.getText().isEmpty()){
+			
+			if(operationModeCombo.getSelectedItem().equals("CBC") && initializationVectorTextArea.getText().isEmpty()){
+				JOptionPane.showMessageDialog(null, "No modo CBC, escreva um IV!");
+				return;
+			}
+			
+			String hexEncryptedMessage = AES.encrypt(
+					messageTextArea.getText(), 
+					keyTextArea.getText(), 
+					operationModesMap.get((String)operationModeCombo.getSelectedItem()), 
+					AES.PaddingType.NIST,
+					initializationVectorTextArea.getText()
+			);
+			
+			encryptedMessageTextArea.setText(hexEncryptedMessage);
+		}else{
+			JOptionPane.showMessageDialog(null, "Escreva uma chave e uma mensagem!");
+		}
 	}
 
 
 	private void aes_decrypt() {
-	//  TODO
+		JTextArea messageTextArea = getTa_plantext();
+		JTextArea keyTextArea = getTa_key();
+		JTextArea encryptedMessageTextArea = getTa_cyphertext();
+		JTextArea initializationVectorTextArea = getTa_iv();
+		JComboBox<String> operationModeCombo = getCbox_mode();
+		
+		if(!encryptedMessageTextArea.getText().isEmpty() && !keyTextArea.getText().isEmpty()){
+			
+			if(operationModeCombo.getSelectedItem().equals("CBC") && initializationVectorTextArea.getText().isEmpty()){
+				JOptionPane.showMessageDialog(null, "No modo CBC, escreva um IV!");
+				return;
+			}
+			
+			String hexDecryptedMessage = AES.decrypt(
+					encryptedMessageTextArea.getText(), 
+					keyTextArea.getText(), 
+					operationModesMap.get((String)operationModeCombo.getSelectedItem()), 
+					AES.PaddingType.NIST,
+					initializationVectorTextArea.getText()
+			);
+			
+			messageTextArea.setText(hexDecryptedMessage);
+		}else{
+			JOptionPane.showMessageDialog(null, "Escreva uma chave e uma mensagem encriptada!");
+		}
 	}
 
 	
@@ -214,13 +276,13 @@ public class FrameAES extends JFrame {
 			jLabel_plantext.setFont(new Font("Tahoma", Font.BOLD, 14));
 			jLabel_plantext.setBounds(12, 158, 81, 28);
 			jPanel_Input.add(jLabel_plantext);
-			jLabel_plantext.setText("Plan Text:");
+			jLabel_plantext.setText("Plain Text:");
 			
 			jLabel_cyphertext = new JLabel();
 			jLabel_cyphertext.setFont(new Font("Tahoma", Font.BOLD, 14));
-			jLabel_cyphertext.setBounds(12, 259, 90, 28);
+			jLabel_cyphertext.setBounds(12, 259, 170, 28);
 			jPanel_Input.add(jLabel_cyphertext);
-			jLabel_cyphertext.setText("Cypher Text:");
+			jLabel_cyphertext.setText("Cypher Text (hex):");
 			
 			jPanel_Input.add(getTa_iv());
 			jPanel_Input.add(getTa_key());
@@ -277,7 +339,7 @@ public class FrameAES extends JFrame {
 	private JComboBox getCbox_mode() {
 		if (cbox_mode == null) {
 			cbox_mode = new JComboBox();
-			cbox_mode.setModel(new DefaultComboBoxModel(new String[] {"ECB", "CBC", "CTR"}));
+			cbox_mode.setModel(new DefaultComboBoxModel(FrameAES.OPERATION_MODES));
 			cbox_mode.setFont(new Font("Tahoma", Font.BOLD, 14));
 			cbox_mode.setBounds(100, 402, 73, 29);
 		}
