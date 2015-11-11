@@ -8,15 +8,6 @@ import src.algorithms.utils.Utils;
 
 public class AES {
 	
-	private int[][] state;
-	
-	private int[][] initializationVector;
-	
-	private int round;
-	
-	private static int[] originalKey;
-	private static int[] expandedKey;
-	
 	private static final int KEY_SIZE = 16;
 	
 //	numero de bytes da chave original e do bloco
@@ -28,20 +19,20 @@ public class AES {
 	
 	private static final int MATRIXES_COLUMN_NUMBER = 4;
 	private static final int MATRIXES_ROWS_NUMBER = 4;
-	private static OpMode operationMode = OpMode.EBC;
 	
-	enum OpMode{
+	public enum OpMode{
 		CBC,
-		EBC
+		ECB,
+		CTR
 	};
 	
-	enum PaddingType{
+	public enum PaddingType{
 		PKCS,
 		NIST
 	};
 
 //	https://en.wikipedia.org/wiki/Rijndael_S-box
-	static final int[] S_BOX = {
+	private static final int[] S_BOX = {
 		0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
 		0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
 		0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc, 0x34, 0xa5, 0xe5, 0xf1, 0x71, 0xd8, 0x31, 0x15,
@@ -60,7 +51,7 @@ public class AES {
 		0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16
 	};
 	
-	static final int[] INV_S_BOX = {
+	private static final int[] INV_S_BOX = {
 		0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb, 
 		0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb, 
 		0x54, 0x7b, 0x94, 0x32, 0xa6, 0xc2, 0x23, 0x3d, 0xee, 0x4c, 0x95, 0x0b, 0x42, 0xfa, 0xc3, 0x4e, 
@@ -81,14 +72,14 @@ public class AES {
 	
 //	https://en.wikipedia.org/wiki/Rijndael_mix_columns
 	
-	public static final int[][] GALOIS_MATRIX = {
+	private static final int[][] GALOIS_MATRIX = {
 		{0x02, 0x03, 0x01, 0x01},
 		{0x01, 0x02, 0x03, 0x01},
 		{0x01, 0x01, 0x02, 0x03},
 		{0x03, 0x01, 0x01, 0x02}
 	};
 	
-	public static final int[][] INV_GALOIS_MATRIX = {
+	private static final int[][] INV_GALOIS_MATRIX = {
 		{0x0e, 0x0b, 0x0d, 0x09},
 		{0x09, 0x0e, 0x0b, 0x0d},
 		{0x0d, 0x09, 0x0e, 0x0b},
@@ -114,7 +105,7 @@ public class AES {
 		0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d
 	};
 	
-	 public static int[][] mc2 ={
+	private static int[][] mc2 ={
 			 {0x00, 0x02, 0x04, 0x06, 0x08, 0x0a, 0x0c, 0x0e, 0x10, 0x12, 0x14, 0x16, 0x18, 0x1a, 0x1c, 0x1e},
 			 {0x20, 0x22, 0x24, 0x26, 0x28, 0x2a, 0x2c, 0x2e, 0x30, 0x32, 0x34, 0x36, 0x38, 0x3a, 0x3c, 0x3e},
              {0x40, 0x42, 0x44, 0x46, 0x48, 0x4a, 0x4c, 0x4e, 0x50, 0x52, 0x54, 0x56, 0x58, 0x5a, 0x5c, 0x5e},
@@ -133,7 +124,7 @@ public class AES {
              {0xfb, 0xf9, 0xff, 0xfd, 0xf3, 0xf1, 0xf7, 0xf5, 0xeb, 0xe9, 0xef, 0xed, 0xe3, 0xe1, 0xe7, 0xe5}
 	 };
 
-	 public final static int[][] mc3 ={   
+	private final static int[][] mc3 ={   
 			{0x00,0x03,0x06,0x05,0x0c,0x0f,0x0a,0x09,0x18,0x1b,0x1e,0x1d,0x14,0x17,0x12,0x11},
 			{0x30,0x33,0x36,0x35,0x3c,0x3f,0x3a,0x39,0x28,0x2b,0x2e,0x2d,0x24,0x27,0x22,0x21},
 			{0x60,0x63,0x66,0x65,0x6c,0x6f,0x6a,0x69,0x78,0x7b,0x7e,0x7d,0x74,0x77,0x72,0x71},
@@ -152,7 +143,7 @@ public class AES {
 			{0x0b,0x08,0x0d,0x0e,0x07,0x04,0x01,0x02,0x13,0x10,0x15,0x16,0x1f,0x1c,0x19,0x1a}   
 	};
 
-	 public static int[][] mc9 = {
+	private  static int[][] mc9 = {
 			 {0x00,0x09,0x12,0x1b,0x24,0x2d,0x36,0x3f,0x48,0x41,0x5a,0x53,0x6c,0x65,0x7e,0x77},
              {0x90,0x99,0x82,0x8b,0xb4,0xbd,0xa6,0xaf,0xd8,0xd1,0xca,0xc3,0xfc,0xf5,0xee,0xe7},
              {0x3b,0x32,0x29,0x20,0x1f,0x16,0x0d,0x04,0x73,0x7a,0x61,0x68,0x57,0x5e,0x45,0x4c},
@@ -171,7 +162,7 @@ public class AES {
              {0x31,0x38,0x23,0x2a,0x15,0x1c,0x07,0x0e,0x79,0x70,0x6b,0x62,0x5d,0x54,0x4f,0x46}
 	 };
 
-	 public static int[][] mc11 = {
+	private  static int[][] mc11 = {
 			 {0x00,0x0b,0x16,0x1d,0x2c,0x27,0x3a,0x31,0x58,0x53,0x4e,0x45,0x74,0x7f,0x62,0x69},
              {0xb0,0xbb,0xa6,0xad,0x9c,0x97,0x8a,0x81,0xe8,0xe3,0xfe,0xf5,0xc4,0xcf,0xd2,0xd9},
              {0x7b,0x70,0x6d,0x66,0x57,0x5c,0x41,0x4a,0x23,0x28,0x35,0x3e,0x0f,0x04,0x19,0x12},
@@ -190,7 +181,7 @@ public class AES {
              {0xca,0xc1,0xdc,0xd7,0xe6,0xed,0xf0,0xfb,0x92,0x99,0x84,0x8f,0xbe,0xb5,0xa8,0xa3}
 	 };
 
-	 public static int[][] mc13 = {
+	private  static int[][] mc13 = {
 			 {0x00,0x0d,0x1a,0x17,0x34,0x39,0x2e,0x23,0x68,0x65,0x72,0x7f,0x5c,0x51,0x46,0x4b},
              {0xd0,0xdd,0xca,0xc7,0xe4,0xe9,0xfe,0xf3,0xb8,0xb5,0xa2,0xaf,0x8c,0x81,0x96,0x9b},
              {0xbb,0xb6,0xa1,0xac,0x8f,0x82,0x95,0x98,0xd3,0xde,0xc9,0xc4,0xe7,0xea,0xfd,0xf0},
@@ -209,7 +200,7 @@ public class AES {
              {0xdc,0xd1,0xc6,0xcb,0xe8,0xe5,0xf2,0xff,0xb4,0xb9,0xae,0xa3,0x80,0x8d,0x9a,0x97}
 	 };
 
-	 public static int[][] mc14 = {
+	private  static int[][] mc14 = {
 			 {0x00,0x0e,0x1c,0x12,0x38,0x36,0x24,0x2a,0x70,0x7e,0x6c,0x62,0x48,0x46,0x54,0x5a},
              {0xe0,0xee,0xfc,0xf2,0xd8,0xd6,0xc4,0xca,0x90,0x9e,0x8c,0x82,0xa8,0xa6,0xb4,0xba},
              {0xdb,0xd5,0xc7,0xc9,0xe3,0xed,0xff,0xf1,0xab,0xa5,0xb7,0xb9,0x93,0x9d,0x8f,0x81},
@@ -228,185 +219,214 @@ public class AES {
              {0xd7,0xd9,0xcb,0xc5,0xef,0xe1,0xf3,0xfd,0xa7,0xa9,0xbb,0xb5,0x9f,0x91,0x83,0x8d}
 	 };
 	
-	private static String apply(String message, String key, OpMode operationMode, PaddingType paddingType, boolean inverse){
-		List<Integer> encryptedMessage = new ArrayList<Integer>();
+	 /*
+	  * Decripta uma hex string (uma string com caracteres hexadecimais, apenas) com uma chave string
+	  */
+	public static String decrypt(String message, String key, OpMode operationMode, PaddingType paddingType, String initiationVector){
+		List<Integer> decryptedMessage = new ArrayList<Integer>();
 		int[] originalMessage = Utils.hexStringToIntArray(message);
-		int[] originalKey = Utils.hexStringToIntArray(key);
+		int[] originalKey = Arrays.copyOfRange(Utils.hexStringToIntArray(Utils.toHexString(key)), 0, 16);
 		
-		if(!inverse){
-			originalMessage = addPadding(
-					originalMessage, 
-					BLOCK_SIZE, 
-					paddingType);
+		int index;
+
+		for(int i = 0; i < originalMessage.length / BLOCK_SIZE ; i++){
+			
+			index = originalMessage.length / BLOCK_SIZE - i - 1;
+			
+			int[] blockBuffer;
+			
+			blockBuffer = Arrays.copyOfRange(originalMessage, 
+					index * BLOCK_SIZE, 
+					index * BLOCK_SIZE + BLOCK_SIZE);
+				
+			try {
+				int[][] lol = decryptBlock(
+							Utils.toMatrix(
+								blockBuffer, 
+								MATRIXES_ROWS_NUMBER, 
+								MATRIXES_COLUMN_NUMBER), 
+							originalKey
+						);
+				blockBuffer = Utils.toArray(
+						lol
+				);
+			} catch (Exception e) {
+				System.out.println("erro no AES");
+				e.printStackTrace();
+				return null;
+			}
+			
+			if(operationMode.equals(OpMode.CBC)){
+				if(i == originalMessage.length / BLOCK_SIZE - 1){
+					int[] initializationVector = Arrays.copyOfRange(Utils.hexStringToIntArray(Utils.toHexString(initiationVector)), 0, BLOCK_SIZE);
+					blockBuffer = cbcBlock(blockBuffer, initializationVector);
+				}else{
+					blockBuffer = cbcBlock(
+							blockBuffer, 
+							Arrays.copyOfRange(
+									originalMessage, 
+									originalMessage.length - (i + 2) * BLOCK_SIZE, 
+									originalMessage.length - (i + 1) * BLOCK_SIZE
+							)
+					);
+				}
+			}
+			
+			for(int j = blockBuffer.length - 1; j >= 0 ; j--){
+				decryptedMessage.add(0, blockBuffer[j]);
+			}
+
 		}
+		
+		int[] decryptedMessageIntArray = Utils.toIntArray(decryptedMessage);
+		
+		decryptedMessageIntArray = removePadding(decryptedMessageIntArray, paddingType);
+				
+		return Utils.hexStringToClearString(Utils.intByteArrayToString(decryptedMessageIntArray));
+	}
+	
+	public static String encrypt(String message, String key, OpMode operationMode, PaddingType paddingType, String initiationVector){
+		List<Integer> encryptedMessage = new ArrayList<Integer>();
+		int[] originalMessage = Utils.hexStringToIntArray(Utils.toHexString(message));
+		int[] originalKey = Arrays.copyOfRange(Utils.hexStringToIntArray(Utils.toHexString(key)), 0, 16);
+
+		originalMessage = addPadding(
+				originalMessage, 
+				BLOCK_SIZE, 
+				paddingType);
+
 		
 //		pra ver se naao vai ter um bloco com padding...
 		int extraRound = (float)originalMessage.length % (float)BLOCK_SIZE > 0.0 ? 1 : 0;
-		int index;
-		if(operationMode.equals(OpMode.EBC)){
-			for(int i = 0; i < originalMessage.length / BLOCK_SIZE + extraRound; i++){
+		
+		for(int i = 0; i < originalMessage.length / BLOCK_SIZE + extraRound; i++){
+
+			int[] blockBuffer;
+			
+			blockBuffer = Arrays.copyOfRange(originalMessage, 
+					i * BLOCK_SIZE, 
+					i * BLOCK_SIZE + BLOCK_SIZE);
 				
-				if(!inverse){
-					index = i;
+			if(operationMode.equals(OpMode.CBC)){
+				if(i == 0){
+					int[] initializationVector = Arrays.copyOfRange(Utils.hexStringToIntArray(Utils.toHexString(initiationVector)), 0, BLOCK_SIZE);
+					blockBuffer = cbcBlock(blockBuffer, initializationVector);
 				}else{
-					index = originalMessage.length / BLOCK_SIZE - i - 1;
+					blockBuffer = cbcBlock(blockBuffer, Utils.toIntArray(encryptedMessage));
 				}
-				
-				int[] blockBuffer;
-				
-				blockBuffer = Arrays.copyOfRange(originalMessage, 
-						index * BLOCK_SIZE, 
-						index * BLOCK_SIZE + BLOCK_SIZE);
-					
-				try {
-					int[][] lol = applyBlock(
-								Utils.toMatrix(
-									blockBuffer, 
-									MATRIXES_ROWS_NUMBER, 
-									MATRIXES_COLUMN_NUMBER), 
-								originalKey,
-								inverse
-							);
-					blockBuffer = Utils.toArray(
-							lol
-					);
-				} catch (Exception e) {
-					System.out.println("erro no AES");
-					e.printStackTrace();
-					return null;
-				}
-				
-				if(!inverse){
-					for(int j = 0; j < blockBuffer.length; j++){
-						encryptedMessage.add(blockBuffer[j]);
-					}
-				}else{
-					for(int j = blockBuffer.length - 1; j >= 0 ; j--){
-						encryptedMessage.add(0, blockBuffer[j]);
-					}
-				}
-				
 			}
+			
+			try {
+				int[][] lol = encryptBlock(
+							Utils.toMatrix(
+								blockBuffer, 
+								MATRIXES_ROWS_NUMBER, 
+								MATRIXES_COLUMN_NUMBER), 
+							originalKey
+						);
+				blockBuffer = Utils.toArray(
+						lol
+				);
+			} catch (Exception e) {
+				System.out.println("erro no AES");
+				e.printStackTrace();
+				return null;
+			}
+
+			for(int j = 0; j < blockBuffer.length; j++){
+				encryptedMessage.add(blockBuffer[j]);
+			}
+			
 		}
 		
 		int[] encryptedMessageIntArray = Utils.toIntArray(encryptedMessage);
 		
-		if(inverse){
-			encryptedMessageIntArray = removePadding(encryptedMessageIntArray, paddingType);
-		}
-		
 		return Utils.intByteArrayToString(encryptedMessageIntArray);
 	}
 	
-	public static String decrypt(String message, String key, OpMode operationMode, PaddingType paddingType){
-		return apply(message, key, operationMode, paddingType, true);
-	}
-	
-	public static String encrypt(String message, String key, OpMode operationMode, PaddingType paddingType){
-		return apply(message, key, operationMode, paddingType, false);
-	}
-	
-	public static int[][] applyBlock(int[][] block, int[] originalKey, boolean inverse){
+	private static int[][] encryptBlock(int[][] block, int[] originalKey){
 		int[] expandedKey = keySchedule(originalKey);
+		int round = 0;
+		int[] roundKey = Arrays.copyOfRange(expandedKey, round * KEY_SIZE, round * KEY_SIZE + KEY_SIZE);
 		
-		try {
-			if(!inverse){
-				int round = 0;
-				
-				int[] roundKey = Arrays.copyOfRange(expandedKey, round * KEY_SIZE, round * KEY_SIZE + KEY_SIZE);
-				
-				printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 0);
-				block = addRoundKey(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER));
-				System.out.println("AFTER ADD ROUND KEY 0");
-				Utils.printMatrix(block);
-				
-				for(int i = 0; i < 9; i++){
-					round++;
-					roundKey = Arrays.copyOfRange(expandedKey, round * KEY_SIZE, round * KEY_SIZE + KEY_SIZE);
-					
-					printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 0);
-					byteSub(block, inverse);
-					System.out.println("AFTER BYTE SUB " + round);
-					Utils.printMatrix(block);
-					
-					printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 0);
-					shiftRows(block, inverse);
-					System.out.println("AFTER SHIFT ROWS " + round);
-					Utils.printMatrix(block);
-					
-					printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 0);
-					block = mixColumn(block, inverse);
-					System.out.println("AFTER MIX COLUMN " + round);
-					Utils.printMatrix(block);
-					
-					printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 0);
-					block = addRoundKey(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER));
-					System.out.println("AFTER ADD ROUND KEY " + round);
-					Utils.printMatrix(block);
-					
-				}
-				
+		try{
+			printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 0);
+			block = addRoundKey(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER));
+			System.out.println("AFTER ADD ROUND KEY 0");
+			Utils.printMatrix(block);
+			
+			for(int i = 0; i < 9; i++){
 				round++;
 				roundKey = Arrays.copyOfRange(expandedKey, round * KEY_SIZE, round * KEY_SIZE + KEY_SIZE);
 				
 				printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 0);
-				byteSub(block, inverse);
+				byteSub(block, false);
 				System.out.println("AFTER BYTE SUB " + round);
 				Utils.printMatrix(block);
 				
 				printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 0);
-				shiftRows(block, inverse);
+				shiftRows(block, false);
 				System.out.println("AFTER SHIFT ROWS " + round);
+				Utils.printMatrix(block);
+				
+				printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 0);
+				block = mixColumn(block, false);
+				System.out.println("AFTER MIX COLUMN " + round);
 				Utils.printMatrix(block);
 				
 				printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 0);
 				block = addRoundKey(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER));
 				System.out.println("AFTER ADD ROUND KEY " + round);
 				Utils.printMatrix(block);
-				return block;
-			}else{
-				int round = 10;
-				int[] roundKey = Arrays.copyOfRange(expandedKey, round * KEY_SIZE, round * KEY_SIZE + KEY_SIZE);
 				
-				printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 0);
-				block = addRoundKey(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER));
-				
-				printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 1);
-				shiftRows(block, inverse);
-				System.out.println("AFTER SHIFT ROWS " + round);
-				Utils.printMatrix(block);
-				
-				printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 1);
-				byteSub(block, inverse);
-				System.out.println("AFTER BYTE SUB " + round);
-				Utils.printMatrix(block);
-				
-				for(int i = 9; i > 0; i--){
-					round--;
-					roundKey = Arrays.copyOfRange(expandedKey, round * KEY_SIZE, round * KEY_SIZE + KEY_SIZE);
-					
-					printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 1);
-					block = addRoundKey(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER));
-					System.out.println("AFTER ADD ROUND KEY " + round);
-					Utils.printMatrix(block);
-					
-					printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 1);
-					block = mixColumn(block, inverse);
-					System.out.println("AFTER MIX COLUMN " + round);
-					Utils.printMatrix(block);
-					
-					printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 1);
-					shiftRows(block, inverse);
-					System.out.println("AFTER SHIFT ROWS " + round);
-					Utils.printMatrix(block);
-					
-					printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 1);
-					byteSub(block, inverse);
-					System.out.println("AFTER BYTE SUB " + round);
-					Utils.printMatrix(block);
-					
-				}
-				
+			}
+			
+			round++;
+			roundKey = Arrays.copyOfRange(expandedKey, round * KEY_SIZE, round * KEY_SIZE + KEY_SIZE);
+			
+			printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 0);
+			byteSub(block, false);
+			System.out.println("AFTER BYTE SUB " + round);
+			Utils.printMatrix(block);
+			
+			printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 0);
+			shiftRows(block, false);
+			System.out.println("AFTER SHIFT ROWS " + round);
+			Utils.printMatrix(block);
+			
+			printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 0);
+			block = addRoundKey(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER));
+			System.out.println("AFTER ADD ROUND KEY " + round);
+			Utils.printMatrix(block);
+			return block;
+		}catch(Exception e){
+			System.out.println("Erro na encriptacao de bloco");
+			e.printStackTrace();
+		}
+		return null;
+		
+	}
+	
+	private static int[][] decryptBlock(int[][] block, int[] originalKey){
+		int[] expandedKey = keySchedule(originalKey);
+		int round = 10;
+		int[] roundKey = Arrays.copyOfRange(expandedKey, round * KEY_SIZE, round * KEY_SIZE + KEY_SIZE);
+		
+		try{
+			printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 0);
+			block = addRoundKey(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER));
+			
+			printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 1);
+			shiftRows(block, true);
+			System.out.println("AFTER SHIFT ROWS " + round);
+			Utils.printMatrix(block);
+			
+			printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 1);
+			byteSub(block, true);
+			System.out.println("AFTER BYTE SUB " + round);
+			Utils.printMatrix(block);
+			
+			for(int i = 9; i > 0; i--){
 				round--;
 				roundKey = Arrays.copyOfRange(expandedKey, round * KEY_SIZE, round * KEY_SIZE + KEY_SIZE);
 				
@@ -414,18 +434,42 @@ public class AES {
 				block = addRoundKey(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER));
 				System.out.println("AFTER ADD ROUND KEY " + round);
 				Utils.printMatrix(block);
-				return block;
+				
+				printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 1);
+				block = mixColumn(block, true);
+				System.out.println("AFTER MIX COLUMN " + round);
+				Utils.printMatrix(block);
+				
+				printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 1);
+				shiftRows(block, true);
+				System.out.println("AFTER SHIFT ROWS " + round);
+				Utils.printMatrix(block);
+				
+				printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 1);
+				byteSub(block, true);
+				System.out.println("AFTER BYTE SUB " + round);
+				Utils.printMatrix(block);
+				
 			}
 			
-		} catch (Exception e) {
-			System.out.println("Algum erro na encryptacao do bloco no AES...");
-			e.printStackTrace();
+			round--;
+			roundKey = Arrays.copyOfRange(expandedKey, round * KEY_SIZE, round * KEY_SIZE + KEY_SIZE);
+			
+			printShit(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER), 1);
+			block = addRoundKey(block, Utils.toMatrix(roundKey, MATRIXES_ROWS_NUMBER, MATRIXES_COLUMN_NUMBER));
+			System.out.println("AFTER ADD ROUND KEY " + round);
+			Utils.printMatrix(block);
+			return block;
+		}catch(Exception e){
+			System.err.println("Erro na desencriptacao de bloco");
 		}
-		
 		return null;
 	}
 	
-	public static int[][] addRoundKey(int[][] block, int[][] roundKey){
+	/*
+	 * BLOCOS BÁSICOS DO AES
+	 */
+	private static int[][] addRoundKey(int[][] block, int[][] roundKey){
 		try {
 			return xorMatrixes(block, roundKey);
 		} catch (Exception e) {
@@ -436,7 +480,7 @@ public class AES {
 	}
 	
 //	  Recebe um bloco (16 "bytes") e so subtitui pelo valor do S_BOX
-	public static void byteSub(int[][] block, boolean inverse){
+	private static void byteSub(int[][] block, boolean inverse){
 
 		for(int i = 0; i < MATRIXES_ROWS_NUMBER; i ++){
 			for(int j = 0; j < MATRIXES_COLUMN_NUMBER; j ++){
@@ -449,7 +493,7 @@ public class AES {
 		}
 	}
 
-	public static void shiftRows(int[][] matrix, boolean inverse){
+	private static void shiftRows(int[][] matrix, boolean inverse){
 		for(int i = 0; i < matrix.length; i++){
 			if(!inverse){
 				rotateLeft(matrix[i], i);
@@ -459,7 +503,7 @@ public class AES {
 		}
 	}
 	
-	public static int[][] mixColumn(int[][] block, boolean inverse){
+	private static int[][] mixColumn(int[][] block, boolean inverse){
 		
 		int[] temp = {0, 0, 0, 0};
 		for(int j = 0; j < block.length; j++){
@@ -488,7 +532,10 @@ public class AES {
 //		}
 	}
 	
-	public static void rotateLeft(int[] array, int shifts){
+	/*
+	 * SUBFUNÇÕES DOS BLOCOS DO AES
+	 */
+	private static void rotateLeft(int[] array, int shifts){
 		int arrayLength = array.length;
 		int temp;
 		for(int i = 0; i < shifts; i++){
@@ -500,29 +547,15 @@ public class AES {
 			array[arrayLength - 1] = temp;
 		}
 	}
-
-	public static void rotateRight(int[] array, int shifts){
-//		int arrayLength = array.length;
-//		int temp;
-//		for(int i = 0; i < shifts; i++){
-//			temp = array[arrayLength - 1];
-//			for(int j = arrayLength - 2; j <= 0; j++){
-//				
-//				array[(j + 1) % arrayLength] = array[j % arrayLength];
-//			}
-//			array[0] = temp;
-//		}
+	private static void rotateRight(int[] array, int shifts){
 		rotateLeft(array, array.length - shifts);
 	}
 	
-	/*
-	 * PRIVATE STUFF
-	 */
 	
 	/*
-	 * Fuçoes do modo de operação
+	 * FUNÇÕES DE PADDING
 	 */
-	public static int[] addPadding(int[] message, int blockSize, PaddingType paddingType){
+	private static int[] addPadding(int[] message, int blockSize, PaddingType paddingType){
 		
 		//Se faltar, completa, senao bota mais um bloco soh de padding
 		int newMessageLength = message.length % BLOCK_SIZE == 0 ? message.length + BLOCK_SIZE : (int)Math.ceil((double)message.length / (double)BLOCK_SIZE) * BLOCK_SIZE;
@@ -549,8 +582,7 @@ public class AES {
 		return newMessage;
 	}
 	
-	
-	public static int[] removePadding(int[] message, PaddingType paddingType){
+	private static int[] removePadding(int[] message, PaddingType paddingType){
 		if(paddingType.equals(PaddingType.NIST)){
 //			padding do tipo "completa com o numero de bytes faltantes em todos os bytes do padding"
 			int paddingSize = message[message.length - 1];
@@ -577,8 +609,17 @@ public class AES {
 		return message;
 	}
 	
+	private static int[] cbcBlock(int[] block, int[] tillNowMessage){
+		int blockSize = block.length;
+		int[] cbcedBlock = new int[blockSize];
+		for(int i = 0; i < blockSize; i++){
+			cbcedBlock[i] = block[i] ^ tillNowMessage[tillNowMessage.length - blockSize + i];
+		}
+		return cbcedBlock;
+	}
+	
 	/*
-	 * Funcoes para o key scheduling
+	 * FUNÇÕES DO KEY SCHEDULING
 	 */
 	private static void rotWord(int[] word){
 		rotateLeft(word, 1);
@@ -646,7 +687,7 @@ public class AES {
 	}
 	
 	/*
-	 * Funçoes auxiliares ou intermediarias
+	 * SUBFUNÇOES DO KEY SCHEDULING
 	 */
 	private static int[][] xorMatrixes(int[][] matrix1, int[][] matrix2) throws Exception{
 		if(matrix1.length != matrix2.length || matrix2[0].length != matrix1[0].length){
@@ -688,27 +729,8 @@ public class AES {
 		return transformedMatrix;
 		
 	}
-
 	private static int galoisMultiplication(int a, int b){
-//		int product = 0;
-//		int aDupe = a;
-//		int bDupe = b;
-//		boolean aHiBitSet;
-//		
-//		for(int i = 0; i < 8; i++){
-//			if((bDupe & 1) == 1){
-//				product ^= aDupe;
-//			}
-//			aHiBitSet = (aDupe & 0b10000000) == 1;
-//			
-//			aDupe <<= 1;
-//			if(aHiBitSet){
-//				aDupe ^= 0x1b;
-//			}
-//			
-//			bDupe >>= 1;
-//		}
-//		return product;
+
 		if (a == 1) {
             return b;
         } else if (a == 2) {
@@ -740,8 +762,9 @@ public class AES {
 		return result;
 	}
 	
-	
-	
+	/*
+	 * STUFF...
+	 */
 	private static void printShit(int[][] block, int[][] key, int i){
 		System.out.println("state " + i + ": ");
 		System.out.println("block: ");
@@ -751,13 +774,13 @@ public class AES {
 	}
 	
 	public static void main(String args[]){
-		String key = "5468617473206D79204B756E67204675";
-		String msg = "54776F204F6E65204E696E652054776F";
+		String key = "Thats my Kung Fu";
+		String msg = "Two One Nine Two";
 		System.out.println(Utils.toHexString(key));
 		System.out.println(Utils.toHexString(msg));
 		
-		String a = AES.encrypt(msg, key, OpMode.EBC, PaddingType.NIST);
-		String b = AES.decrypt(a, key, OpMode.EBC, PaddingType.NIST);
+		String a = AES.encrypt(msg, key, OpMode.ECB, PaddingType.NIST, null);
+		String b = AES.decrypt(a, key, OpMode.ECB, PaddingType.NIST, null);
 		System.out.println(a);
 		System.out.println(b);
 	}

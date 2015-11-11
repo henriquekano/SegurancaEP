@@ -1,6 +1,7 @@
 package src.algorithms.utils;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.bind.DatatypeConverter;
@@ -81,6 +82,15 @@ public class Utils {
 		}
 		
 		return array;
+	}
+	
+	public static List<Integer> toIntList(int[] array){
+		List<Integer> list = new ArrayList<Integer>(array.length);
+		for(int i = 0; i < array.length; i++){
+			list.add(array[i]);
+		}
+		
+		return list;
 	}
 	
 	public static int[] hexStringToIntArray(String hexString){
