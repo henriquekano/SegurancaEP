@@ -3,6 +3,8 @@ package src.gui;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Rectangle;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -94,12 +96,23 @@ public class FrameAES extends JFrame {
 	}
 	
 	private void aes_generateIV() {
-	//  TODO
+		 SecureRandom random = new SecureRandom();
+		 String initializationVector = new BigInteger(128, random).toString(32);
+		 
+		 System.out.println(initializationVector.length());
+		 JTextArea ivTextArea = getTa_iv();
+		 
+		 ivTextArea.setText(initializationVector);
 	}
 
 
 	private void aes_generateKey() {
-	//  TODO
+		SecureRandom random = new SecureRandom();
+		String key = new BigInteger(128, random).toString(32);
+		 
+		JTextArea keyTextArea = getTa_key();
+		 
+		keyTextArea.setText(key);
 	}
 
 	
@@ -263,13 +276,13 @@ public class FrameAES extends JFrame {
 			jLabel_plantext.setFont(new Font("Tahoma", Font.BOLD, 14));
 			jLabel_plantext.setBounds(12, 158, 81, 28);
 			jPanel_Input.add(jLabel_plantext);
-			jLabel_plantext.setText("Plan Text:");
+			jLabel_plantext.setText("Plain Text:");
 			
 			jLabel_cyphertext = new JLabel();
 			jLabel_cyphertext.setFont(new Font("Tahoma", Font.BOLD, 14));
-			jLabel_cyphertext.setBounds(12, 259, 90, 28);
+			jLabel_cyphertext.setBounds(12, 259, 170, 28);
 			jPanel_Input.add(jLabel_cyphertext);
-			jLabel_cyphertext.setText("Cypher Text:");
+			jLabel_cyphertext.setText("Cypher Text (hex):");
 			
 			jPanel_Input.add(getTa_iv());
 			jPanel_Input.add(getTa_key());

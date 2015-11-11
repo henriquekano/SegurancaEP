@@ -122,4 +122,14 @@ public class Utils {
 		System.out.println();
 	}
 	
+	public static int[] increment(int[] intByteArray, int increment){
+		int[] incremented = new int[intByteArray.length];
+		int sum, vaiUm = 0;
+		for(int i = intByteArray.length - 1; i >= 0; i--){
+			sum = (intByteArray[i] + increment + vaiUm);
+			vaiUm = sum / 0x100;
+			incremented[i] = sum % 0x100;
+		}
+		return incremented;
+	}
 }

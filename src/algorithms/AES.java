@@ -226,29 +226,47 @@ public class AES {
 		List<Integer> decryptedMessage = new ArrayList<Integer>();
 		int[] originalMessage = Utils.hexStringToIntArray(message);
 		int[] originalKey = Arrays.copyOfRange(Utils.hexStringToIntArray(Utils.toHexString(key)), 0, 16);
-		
+		int[] originalInitializationVector = Arrays.copyOfRange(Utils.hexStringToIntArray(Utils.toHexString(key)), 0, BLOCK_SIZE);
+		int[] initializationVectorBuffer = originalInitializationVector;
+		int[] blockBuffer;
 		int index;
 
 		for(int i = 0; i < originalMessage.length / BLOCK_SIZE ; i++){
 			
 			index = originalMessage.length / BLOCK_SIZE - i - 1;
 			
-			int[] blockBuffer;
-			
 			blockBuffer = Arrays.copyOfRange(originalMessage, 
 					index * BLOCK_SIZE, 
 					index * BLOCK_SIZE + BLOCK_SIZE);
 				
+//			coisas do modo de operacao
+			if (operationMode.equals(OpMode.CTR)){
+				blockBuffer = initializationVectorBuffer;
+			}
+			
+//			decriptacao do bloco
 			try {
-				int[][] lol = decryptBlock(
+				int[][] decryptedBlock;
+				if(operationMode.equals(OpMode.CTR)){
+					decryptedBlock = encryptBlock(
+						Utils.toMatrix(
+							blockBuffer, 
+							MATRIXES_ROWS_NUMBER, 
+							MATRIXES_COLUMN_NUMBER), 
+						originalKey
+					);
+				}else{
+					decryptedBlock = decryptBlock(
 							Utils.toMatrix(
 								blockBuffer, 
 								MATRIXES_ROWS_NUMBER, 
 								MATRIXES_COLUMN_NUMBER), 
 							originalKey
 						);
+				}
+				
 				blockBuffer = Utils.toArray(
-						lol
+						decryptedBlock
 				);
 			} catch (Exception e) {
 				System.out.println("erro no AES");
@@ -256,6 +274,7 @@ public class AES {
 				return null;
 			}
 			
+//			mais coisas do modo de opera'c~ao
 			if(operationMode.equals(OpMode.CBC)){
 				if(i == originalMessage.length / BLOCK_SIZE - 1){
 					int[] initializationVector = Arrays.copyOfRange(Utils.hexStringToIntArray(Utils.toHexString(initiationVector)), 0, BLOCK_SIZE);
@@ -270,7 +289,16 @@ public class AES {
 							)
 					);
 				}
+			}else if(operationMode.equals(OpMode.CTR)){
+				blockBuffer = ctrBlock(
+						Arrays.copyOfRange(
+							originalMessage, 
+							i * BLOCK_SIZE, 
+							i * BLOCK_SIZE + BLOCK_SIZE),
+						blockBuffer);
+				initializationVectorBuffer = Utils.increment(initializationVectorBuffer, 1);
 			}
+			
 			
 			for(int j = blockBuffer.length - 1; j >= 0 ; j--){
 				decryptedMessage.add(0, blockBuffer[j]);
@@ -288,8 +316,11 @@ public class AES {
 	public static String encrypt(String message, String key, OpMode operationMode, PaddingType paddingType, String initiationVector){
 		List<Integer> encryptedMessage = new ArrayList<Integer>();
 		int[] originalMessage = Utils.hexStringToIntArray(Utils.toHexString(message));
-		int[] originalKey = Arrays.copyOfRange(Utils.hexStringToIntArray(Utils.toHexString(key)), 0, 16);
-
+		int[] originalKey = Arrays.copyOfRange(Utils.hexStringToIntArray(Utils.toHexString(key)), 0, BLOCK_SIZE);
+		int[] originalInitializationVector = Arrays.copyOfRange(Utils.hexStringToIntArray(Utils.toHexString(key)), 0, BLOCK_SIZE);
+		int[] initializationVectorBuffer = originalInitializationVector;
+		int[] blockBuffer;
+		
 		originalMessage = addPadding(
 				originalMessage, 
 				BLOCK_SIZE, 
@@ -301,8 +332,6 @@ public class AES {
 		
 		for(int i = 0; i < originalMessage.length / BLOCK_SIZE + extraRound; i++){
 
-			int[] blockBuffer;
-			
 			blockBuffer = Arrays.copyOfRange(originalMessage, 
 					i * BLOCK_SIZE, 
 					i * BLOCK_SIZE + BLOCK_SIZE);
@@ -314,6 +343,8 @@ public class AES {
 				}else{
 					blockBuffer = cbcBlock(blockBuffer, Utils.toIntArray(encryptedMessage));
 				}
+			}else if (operationMode.equals(OpMode.CTR)){
+				blockBuffer = initializationVectorBuffer;
 			}
 			
 			try {
@@ -332,7 +363,17 @@ public class AES {
 				e.printStackTrace();
 				return null;
 			}
-
+			
+			if(operationMode.equals(OpMode.CTR)){
+				blockBuffer = ctrBlock(
+						Arrays.copyOfRange(
+							originalMessage, 
+							i * BLOCK_SIZE, 
+							i * BLOCK_SIZE + BLOCK_SIZE),
+						blockBuffer);
+				initializationVectorBuffer = Utils.increment(initializationVectorBuffer, 1);
+			}
+			
 			for(int j = 0; j < blockBuffer.length; j++){
 				encryptedMessage.add(blockBuffer[j]);
 			}
@@ -616,6 +657,15 @@ public class AES {
 			cbcedBlock[i] = block[i] ^ tillNowMessage[tillNowMessage.length - blockSize + i];
 		}
 		return cbcedBlock;
+	}
+	
+	private static int[] ctrBlock(int[] encryptedBlock, int[] messageBlock){
+		int blockSize = encryptedBlock.length;
+		int[] ctredBlock = new int[blockSize];
+		for(int i = 0; i < blockSize; i++){
+			ctredBlock[i] = encryptedBlock[i] ^ messageBlock[i];
+		}
+		return ctredBlock;
 	}
 	
 	/*
