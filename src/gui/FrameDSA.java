@@ -2,37 +2,28 @@ package src.gui;
 
 import src.algorithms.*;
 
-import java.awt.BorderLayout;
-
-import javax.swing.ButtonGroup;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JFrame;
 import javax.swing.JButton;
 import java.awt.Rectangle;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Optional;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
-import java.awt.Dimension;
 import javax.swing.JLabel;
-import javax.swing.JTextField;
-
-import java.awt.GridBagLayout;
 import java.awt.Color;
-import javax.swing.JRadioButton;
 import java.awt.Font;
 import javax.swing.border.LineBorder;
-import javax.swing.border.MatteBorder;
 import javax.swing.border.TitledBorder;
 import javax.xml.bind.DatatypeConverter;
 
-import javax.swing.UIManager;
-import javax.swing.JTextPane;
-import javax.swing.JEditorPane;
-import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.JComboBox;
@@ -42,6 +33,7 @@ public class FrameDSA extends JFrame {
 	
 	private static final long serialVersionUID = 1L;
 	private JPanel jContentPane = null;
+	private JButton bt_generatePairKey = null;
 	private JButton bt_sign = null;
 	private JButton bt_decrypt = null;
 	private JLabel jLabel_message;
@@ -58,9 +50,6 @@ public class FrameDSA extends JFrame {
 	private JTextArea ta_hash;
 	private JTextArea ta_signature;
 	private JComboBox cbox_mode;
-
-	private static PublicKey publicKey;
-	private static PrivateKey privateKey;
 
 	/**
 	 * This is the default constructor
@@ -121,51 +110,92 @@ public class FrameDSA extends JFrame {
 		}
 		return jContentPane;
 	}
-	
-	private void dsa_sign() {
-		String message = getTa_message().getText();
-		byte[] byteMessage = message.getBytes();
-		String hashAlgorithm = HMAC_ALGORITHMS().get((String)getCbox_mode().getSelectedItem());
-		
+
+	private void dsa_generatePairKey() {
 		KeyPair keyPair = DSA.createKeyPair();
 		PublicKey publicKey = keyPair.getPublic();
 		PrivateKey privateKey = keyPair.getPrivate();
-		
-		FrameDSA.publicKey = publicKey;
-		FrameDSA.privateKey = privateKey;
 		
 		JTextArea publicKeyTextArea = getTa_publickey();
 		JTextArea privateKeyTextArea = getTa_privatekey();
 		publicKeyTextArea.setText(DatatypeConverter.printHexBinary(publicKey.getEncoded()));
 		privateKeyTextArea.setText(DatatypeConverter.printHexBinary(privateKey.getEncoded()));
-				
-		if(message != null && privateKey != null && hashAlgorithm != null){
-			Optional<byte[]> signature = DSA.sign(privateKey, byteMessage, hashAlgorithm);
-			if(signature.isPresent()){
-				JTextArea signatureTextArea = getTa_signature();
-				signatureTextArea.setText(DatatypeConverter.printHexBinary(signature.get()));
-				
-				byte[] digest = DSA.getDigest(byteMessage, hashAlgorithm);
-				JTextArea hashTextArea = getTa_hash();
-				hashTextArea.setText(DatatypeConverter.printHexBinary(digest));
+	}
+	
+	private void dsa_sign() {
+		try {
+			byte[] bytesPrivateKey = hexStringToByteArray(getTa_privatekey().getText());
+			PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(bytesPrivateKey);
+			KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+			PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
+			
+			String message = getTa_message().getText();
+			byte[] byteMessage = hexStringToByteArray(message);
+			String hashAlgorithm = HMAC_ALGORITHMS().get((String)getCbox_mode().getSelectedItem());
+					
+			if(message != null && privateKey != null && hashAlgorithm != null){
+				Optional<byte[]> signature = DSA.sign(privateKey, byteMessage, hashAlgorithm);
+				if(signature.isPresent()){
+					JTextArea signatureTextArea = getTa_signature();
+					signatureTextArea.setText(DatatypeConverter.printHexBinary(signature.get()));
+					
+					byte[] digest = DSA.getDigest(byteMessage, hashAlgorithm);
+					JTextArea hashTextArea = getTa_hash();
+					hashTextArea.setText(DatatypeConverter.printHexBinary(digest));
+				}
 			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
+		
 	}
 
 
 	private void dsa_verify() {
-		String signature = getTa_signature().getText();
-		byte[] byteSignature = hexStringToByteArray(signature);
-		String digest = getTa_hash().getText();
-		byte[] byteDigest = hexStringToByteArray(digest);
-		String hashAlgorithm = HMAC_ALGORITHMS().get((String)getCbox_mode().getSelectedItem());
+		try {
+			byte[] bytesPublicKey = hexStringToByteArray(getTa_publickey().getText());
+			X509EncodedKeySpec keySpec = new X509EncodedKeySpec(bytesPublicKey);
+			KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+			PublicKey publicKey = keyFactory.generatePublic(keySpec);
+			
+			String signature = getTa_signature().getText();
+			byte[] byteSignature = hexStringToByteArray(signature);
+			String digest = getTa_hash().getText();
+			byte[] byteDigest = hexStringToByteArray(digest);
+			String hashAlgorithm = HMAC_ALGORITHMS().get((String)getCbox_mode().getSelectedItem());
 
-		if(signature != null && publicKey != null && hashAlgorithm != null){
-			Optional<String> output = DSA.verify(publicKey, byteDigest, byteSignature, hashAlgorithm);
-			if(output.isPresent()){
-				JOptionPane.showMessageDialog(null, output.get());
+			if(signature != null && publicKey != null && hashAlgorithm != null){
+				Optional<String> output = DSA.verify(publicKey, byteDigest, byteSignature, hashAlgorithm);
+				if(output.isPresent()){
+					JOptionPane.showMessageDialog(null, output.get());
+				}
 			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
+	}
+
+
+	/**
+	 * This method initializes bt_generatePairKey
+	 * 	
+	 * @return javax.swing.JButton	
+	 */
+	private JButton getBt_generateKeyPair() {
+		if (bt_generatePairKey == null) {
+			bt_generatePairKey = new JButton();
+			bt_generatePairKey.setText("Generate a Key Pair");
+			bt_generatePairKey.setHorizontalAlignment(SwingConstants.LEADING);
+			bt_generatePairKey.setFont(new Font("Tahoma", Font.BOLD, 14));
+			bt_generatePairKey.setBounds(new Rectangle(170, 402, 113, 29));
+			bt_generatePairKey.setBounds(12, 24, 169, 29);
+			bt_generatePairKey.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					dsa_generatePairKey();
+				}
+			});
+		}
+		return bt_generatePairKey;
 	}
 
 	
@@ -225,25 +255,25 @@ public class FrameDSA extends JFrame {
 
 			jLabel_message = new JLabel();
 			jLabel_message.setFont(new Font("Tahoma", Font.BOLD, 14));
-			jLabel_message.setBounds(12, 37, 81, 28);
+			jLabel_message.setBounds(12, 168, 81, 28);
 			jPanel_Input.add(jLabel_message);
 			jLabel_message.setText("Message:");
 
 			jLabel_privatekey = new JLabel();
 			jLabel_privatekey.setFont(new Font("Tahoma", Font.BOLD, 14));
-			jLabel_privatekey.setBounds(12, 106, 90, 28);
+			jLabel_privatekey.setBounds(12, 64, 90, 28);
 			jPanel_Input.add(jLabel_privatekey);
 			jLabel_privatekey.setText("Private Key:");
 
 			jLabel_publickey = new JLabel();
 			jLabel_publickey.setFont(new Font("Tahoma", Font.BOLD, 14));
-			jLabel_publickey.setBounds(12, 153, 90, 28);
+			jLabel_publickey.setBounds(12, 111, 90, 28);
 			jPanel_Input.add(jLabel_publickey);
 			jLabel_publickey.setText("Public Key:");
 			
 			jLabel_hash = new JLabel();
 			jLabel_hash.setFont(new Font("Tahoma", Font.BOLD, 14));
-			jLabel_hash.setBounds(12, 204, 66, 28);
+			jLabel_hash.setBounds(12, 222, 66, 28);
 			jPanel_Input.add(jLabel_hash);
 			jLabel_hash.setText("Hash:");
 			
@@ -259,6 +289,7 @@ public class FrameDSA extends JFrame {
 			jPanel_Input.add(getTa_hash());
 			jPanel_Input.add(getTa_signature());
 			jPanel_Input.add(getTa_publickey());
+			jPanel_Input.add(getBt_generateKeyPair());
 		}
 		return jPanel_Input;
 	}
@@ -268,7 +299,7 @@ public class FrameDSA extends JFrame {
 			ta_message = new JTextArea();
 			ta_message.setLineWrap(true);
 			ta_message.setFont(new Font("Tahoma", Font.PLAIN, 12));
-			ta_message.setBounds(116, 27, 450, 51);
+			ta_message.setBounds(116, 158, 450, 51);
 		}
 		return ta_message;
 	}
@@ -278,7 +309,7 @@ public class FrameDSA extends JFrame {
 			ta_privatekey = new JTextArea();
 			ta_privatekey.setLineWrap(true);
 			ta_privatekey.setFont(new Font("Tahoma", Font.PLAIN, 12));
-			ta_privatekey.setBounds(116, 102, 450, 38);;
+			ta_privatekey.setBounds(116, 60, 450, 38);;
 		}
 		return ta_privatekey;
 	}
@@ -288,7 +319,7 @@ public class FrameDSA extends JFrame {
 			ta_publickey = new JTextArea();
 			ta_publickey.setLineWrap(true);
 			ta_publickey.setFont(new Font("Tahoma", Font.PLAIN, 12));
-			ta_publickey.setBounds(116, 149, 450, 38);
+			ta_publickey.setBounds(116, 107, 450, 38);
 		}
 		return ta_publickey;
 	}
@@ -298,7 +329,7 @@ public class FrameDSA extends JFrame {
 			ta_hash = new JTextArea();
 			ta_hash.setLineWrap(true);
 			ta_hash.setFont(new Font("Tahoma", Font.PLAIN, 12));
-			ta_hash.setBounds(116, 200, 450, 38);
+			ta_hash.setBounds(116, 218, 450, 38);
 		}
 		return ta_hash;
 	}
@@ -308,7 +339,7 @@ public class FrameDSA extends JFrame {
 			ta_signature = new JTextArea();
 			ta_signature.setLineWrap(true);
 			ta_signature.setFont(new Font("Tahoma", Font.PLAIN, 12));
-			ta_signature.setBounds(116, 251, 450, 90);
+			ta_signature.setBounds(116, 272, 450, 69);
 		}
 		return ta_signature;
 	}
