@@ -118,8 +118,12 @@ public class FrameDSA extends JFrame {
 		
 		JTextArea publicKeyTextArea = getTa_publickey();
 		JTextArea privateKeyTextArea = getTa_privatekey();
-		publicKeyTextArea.setText(DatatypeConverter.printHexBinary(publicKey.getEncoded()));
-		privateKeyTextArea.setText(DatatypeConverter.printHexBinary(privateKey.getEncoded()));
+		
+		byte[] bytePublicKey = publicKey.getEncoded();
+		byte[] bytePrivateKey = privateKey.getEncoded();
+
+		publicKeyTextArea.setText(DatatypeConverter.printHexBinary(bytePublicKey));
+		privateKeyTextArea.setText(DatatypeConverter.printHexBinary(bytePrivateKey));
 	}
 	
 	private void dsa_sign() {
