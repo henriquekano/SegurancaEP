@@ -12,11 +12,11 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
-import javax.xml.bind.DatatypeConverter;
 
 import src.algorithms.Hmac;
 import src.algorithms.utils.Utils;
@@ -88,12 +88,14 @@ public class FrameHMAC extends JFrame {
 		String key = getTa_key().getText();
 		String hashAlgorithm = HMAC_ALGORITHMS().get((String)getCbox_mode().getSelectedItem());
 		
-		if(message != null && key != null && hashAlgorithm != null){
+		if(message != "" && key != "" && hashAlgorithm != null){
 			Optional<byte[]> mac = Hmac.encript(key, message, hashAlgorithm);
 			if(mac.isPresent()){
 				JTextArea macTextArea = getTa_mac();
 				macTextArea.setText(Utils.toHexString(mac.get()));
 			}
+		} else {
+			JOptionPane.showMessageDialog(null, "Por favor, preencha os parâmetros corretamente.");
 		}
 	}
 

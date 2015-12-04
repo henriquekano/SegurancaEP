@@ -9,12 +9,13 @@ import javax.swing.JButton;
 import java.awt.Rectangle;
 import java.security.KeyFactory;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Optional;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import javax.swing.JLabel;
@@ -28,6 +29,7 @@ import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.JComboBox;
 import javax.swing.DefaultComboBoxModel;
+import src.algorithms.utils.Utils;
 
 public class FrameDSA extends JFrame {
 	
@@ -76,15 +78,7 @@ public class FrameDSA extends JFrame {
 	 * @param s
 	 * @return
 	 */
-	public static byte[] hexStringToByteArray(String s) {
-	    int len = s.length();
-	    byte[] data = new byte[len / 2];
-	    for (int i = 0; i < len; i += 2) {
-	        data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-	                             + Character.digit(s.charAt(i+1), 16));
-	    }
-	    return data;
-	}
+	
 
 	/**
 	 * This method initializes jContentPane
@@ -128,16 +122,16 @@ public class FrameDSA extends JFrame {
 	
 	private void dsa_sign() {
 		try {
-			byte[] bytesPrivateKey = hexStringToByteArray(getTa_privatekey().getText());
+			byte[] bytesPrivateKey = Utils.hexStringToByteArray(getTa_privatekey().getText());
 			PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(bytesPrivateKey);
 			KeyFactory keyFactory = KeyFactory.getInstance("RSA");
 			PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
 			
 			String message = getTa_message().getText();
-			byte[] byteMessage = hexStringToByteArray(message);
+			byte[] byteMessage = Utils.hexStringToByteArray(message);
 			String hashAlgorithm = HMAC_ALGORITHMS().get((String)getCbox_mode().getSelectedItem());
 					
-			if(message != null && privateKey != null && hashAlgorithm != null){
+			if(byteMessage.length != 0 && privateKey != null && hashAlgorithm != null){
 				Optional<byte[]> signature = DSA.sign(privateKey, byteMessage, hashAlgorithm);
 				if(signature.isPresent()){
 					JTextArea signatureTextArea = getTa_signature();
@@ -148,7 +142,7 @@ public class FrameDSA extends JFrame {
 					hashTextArea.setText(DatatypeConverter.printHexBinary(digest));
 				}
 			}
-		} catch (Exception e) {
+		} catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		}
 		
@@ -157,18 +151,18 @@ public class FrameDSA extends JFrame {
 
 	private void dsa_verify() {
 		try {
-			byte[] bytesPublicKey = hexStringToByteArray(getTa_publickey().getText());
+			byte[] bytesPublicKey = Utils.hexStringToByteArray(getTa_publickey().getText());
 			X509EncodedKeySpec keySpec = new X509EncodedKeySpec(bytesPublicKey);
 			KeyFactory keyFactory = KeyFactory.getInstance("RSA");
 			PublicKey publicKey = keyFactory.generatePublic(keySpec);
 			
 			String signature = getTa_signature().getText();
-			byte[] byteSignature = hexStringToByteArray(signature);
+			byte[] byteSignature = Utils.hexStringToByteArray(signature);
 			String digest = getTa_hash().getText();
-			byte[] byteDigest = hexStringToByteArray(digest);
+			byte[] byteDigest = Utils.hexStringToByteArray(digest);
 			String hashAlgorithm = HMAC_ALGORITHMS().get((String)getCbox_mode().getSelectedItem());
 
-			if(signature != null && publicKey != null && hashAlgorithm != null){
+			if(byteDigest.length != 0 && byteSignature.length != 0 && signature != null && publicKey != null && hashAlgorithm != null){
 				Optional<String> output = DSA.verify(publicKey, byteDigest, byteSignature, hashAlgorithm);
 				if(output.isPresent()){
 					JOptionPane.showMessageDialog(null, output.get());
