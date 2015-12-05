@@ -27,7 +27,7 @@ public class Utils {
 	}
 	
 	public static String toHexString(int[] intByteArray){
-		String buffer = "0x";
+		String buffer = "";
 		String asd;
 		for(int i = 0; i < intByteArray.length; i++){
 			asd = Integer.toHexString(intByteArray[i]).toUpperCase();
