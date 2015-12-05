@@ -3,22 +3,25 @@ package src.gui;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Rectangle;
-import java.io.UnsupportedEncodingException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Optional;
 
-import javax.crypto.Cipher;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
-import javax.xml.bind.DatatypeConverter;
 
 import src.algorithms.RSA;
 import src.algorithms.utils.Utils;
@@ -41,6 +44,7 @@ public class FrameRSA extends JFrame {
 	private JTextArea ta_plantext;
 	private JTextArea ta_cyphertext;
 	
+	private static KeyFactory kf;
 	private static PublicKey publicKey;
 	private static PrivateKey privateKey;
 	private byte[] encryptedMessage;
@@ -59,6 +63,12 @@ public class FrameRSA extends JFrame {
 	 * @return void
 	 */
 	private void initialize() {
+		try {
+			kf = KeyFactory.getInstance("RSA");
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		this.setSize(620, 500);
 		this.setContentPane(getJContentPane());
 		this.setTitle("RSA Encryption");
@@ -94,8 +104,8 @@ public class FrameRSA extends JFrame {
 		FrameRSA.publicKey = publicKey;
 		FrameRSA.privateKey = privateKey;
 		
-		publicKeyTextArea.setText(DatatypeConverter.printHexBinary(publicKey.getEncoded()));
-		privateKeyTextArea.setText(DatatypeConverter.printHexBinary(privateKey.getEncoded()));
+		publicKeyTextArea.setText(Utils.toHexString(publicKey.getEncoded()));
+		privateKeyTextArea.setText(Utils.toHexString(privateKey.getEncoded()));
 		
 		
 	}
@@ -103,14 +113,28 @@ public class FrameRSA extends JFrame {
 	private void rsa_encrypt() {
 		JTextArea mesageTextArea = getTa_plantext();
 		JTextArea encryptedTextArea = getTa_cyphertext();
+		JTextArea keyTextArea = getTa_publickey();
+		
 		
 		if(!mesageTextArea.getText().isEmpty()){
-			Optional<byte[]> encryptedMessage = RSA.encrypt(mesageTextArea.getText().getBytes(), publicKey);
-			
-			if(encryptedMessage.isPresent()){
-				encryptedTextArea.setText(Utils.toHexString(encryptedMessage.get()));
-				this.encryptedMessage = encryptedMessage.get();
+			byte[] hexKey = Utils.hexStringToByteArray(keyTextArea.getText());
+			X509EncodedKeySpec  ks = new X509EncodedKeySpec (hexKey);
+			Optional<byte[]> encryptedMessage;
+			try {
+				X509EncodedKeySpec  keySpec = new X509EncodedKeySpec(hexKey);
+				encryptedMessage = RSA.encrypt(
+						Utils.hexStringToByteArray(mesageTextArea.getText()),
+						kf.generatePublic(ks)
+						);
+				if(encryptedMessage.isPresent()){
+					encryptedTextArea.setText(Utils.toHexString(encryptedMessage.get()));
+					this.encryptedMessage = encryptedMessage.get();
+				}
+			} catch (InvalidKeySpecException e) {
+				JOptionPane.showMessageDialog(null, "Chave publica errada");
+				e.printStackTrace();
 			}
+			
 		}
 		
 	}
@@ -119,15 +143,27 @@ public class FrameRSA extends JFrame {
 	private void rsa_decrypt() {
 		JTextArea mesageTextArea = getTa_plantext();
 		JTextArea encryptedTextArea = getTa_cyphertext();
+		JTextArea keyTextArea = getTa_privatekey();
 		
 		if(!encryptedTextArea.getText().isEmpty()){
+			byte[] hexKey = Utils.hexStringToByteArray(keyTextArea.getText());
 			Optional<byte[]> decryptedMessage = Optional.empty();
-			
-			decryptedMessage = RSA.decrypt(this.encryptedMessage, privateKey);
+			PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(hexKey);
+			try {
+				decryptedMessage = RSA.decrypt(
+						Utils.hexStringToByteArray(encryptedTextArea.getText()), 
+						kf.generatePrivate(keySpec)
+						);
+			} catch (InvalidKeySpecException e) {
+				JOptionPane.showMessageDialog(null, "Chave privada invalida!");
+				e.printStackTrace();
+			}
 			
 			if(decryptedMessage.isPresent()){
-				mesageTextArea.setText(new String(decryptedMessage.get()));
+				mesageTextArea.setText(Utils.toHexString(decryptedMessage.get()));
 			}
+		}else{
+			JOptionPane.showMessageDialog(null, "Coloque uma mensagem!");
 		}
 	}
 
