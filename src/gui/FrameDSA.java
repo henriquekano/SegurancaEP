@@ -7,11 +7,13 @@ import javax.swing.JPanel;
 import javax.swing.JFrame;
 import javax.swing.JButton;
 import java.awt.Rectangle;
+import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.interfaces.DSAPrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -25,11 +27,15 @@ import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import javax.xml.bind.DatatypeConverter;
 
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+
 import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.JComboBox;
 import javax.swing.DefaultComboBoxModel;
 import src.algorithms.utils.Utils;
+import sun.misc.BASE64Encoder;
 
 public class FrameDSA extends JFrame {
 	
@@ -70,6 +76,30 @@ public class FrameDSA extends JFrame {
 		this.setSize(620, 500);
 		this.setContentPane(getJContentPane());
 		this.setTitle("DSA Signature");
+		
+		String P = "a8f9cd201e5e35d892f85f80e4db2599a5676a3b1d4f190330ed3256b26d0e80a0e49a8fffaaad2a24f472d2573241d4d6d6c7480c80b4c67bb4479c15ada7ea8424d2502fa01472e760241713dab025ae1b02e1703a1435f62ddf4ee4c1b664066eb22f2e3bf28bb70a2a76e4fd5ebe2d1229681b5b06439ac9c7e9d8bde283";
+		String Q = "f85f0f83ac4df7ea0cdf8f469bfeeaea14156495";
+		String G = "2b3152ff6c62f14622b8f48e59f8af46883b38e79b8c74deeae9df131f8b856e3ad6c8455dab87cc0da8ac973417ce4f7878557d6cdf40b35b4a0ca3eb310c6a95d68ce284ad4e25ea28591611ee08b8444bd64b25f3f7c572410ddfb39cc728b9c936f85f419129869929cdb909a6a3a99bbe089216368171bd0ba81de4fe33";
+		String X = "c53eae6d45323164c7d07af5715703744a63fc3a";
+		String Y = "313fd9ebca91574e1c2eebe1517c57e0c21b0209872140c5328761bbb2450b33f1b18b409ce9ab7c4cd8fda3391e8e34868357c199e16a6b2eba06d6749def791d79e95d3a4d09b24c392ad89dbf100995ae19c01062056bb14bce005e8731efde175f95b975089bdcdaea562b32786d96f5a31aedf75364008ad4fffebb970b";
+		
+		BigInteger p = new BigInteger(P, 16);
+		BigInteger q = new BigInteger(Q, 16);
+		BigInteger g = new BigInteger(G, 16);
+		BigInteger x = new BigInteger(X, 16);
+		BigInteger y = new BigInteger(Y, 16);
+		
+		PublicKey publicKey = DSA.createPublicKeyByParams(p, q, g, y);
+		PrivateKey privateKey = DSA.createPrivateKeyByParams(p, q, g, x);
+		
+		byte[] bytePublicKey = publicKey.getEncoded();
+		byte[] bytePrivateKey = privateKey.getEncoded();
+		
+		JTextArea publicKeyTextArea = getTa_publickey();
+		JTextArea privateKeyTextArea = getTa_privatekey();
+		
+		publicKeyTextArea.setText(DatatypeConverter.printHexBinary(bytePublicKey));
+		privateKeyTextArea.setText(DatatypeConverter.printHexBinary(bytePrivateKey));
 	}
 	
 	/**
@@ -107,25 +137,24 @@ public class FrameDSA extends JFrame {
 
 	private void dsa_generatePairKey() {
 		KeyPair keyPair = DSA.createKeyPair();
-		PublicKey publicKey = keyPair.getPublic();
-		PrivateKey privateKey = keyPair.getPrivate();
 		
 		JTextArea publicKeyTextArea = getTa_publickey();
 		JTextArea privateKeyTextArea = getTa_privatekey();
 		
-		byte[] bytePublicKey = publicKey.getEncoded();
-		byte[] bytePrivateKey = privateKey.getEncoded();
-
-		publicKeyTextArea.setText(DatatypeConverter.printHexBinary(bytePublicKey));
-		privateKeyTextArea.setText(DatatypeConverter.printHexBinary(bytePrivateKey));
+		publicKeyTextArea.setText(DSA.getPublicKeyHexString(keyPair));
+		privateKeyTextArea.setText(DSA.getPrivateKeyHexString(keyPair));
 	}
 	
 	private void dsa_sign() {
 		try {
 			byte[] bytesPrivateKey = Utils.hexStringToByteArray(getTa_privatekey().getText());
 			PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(bytesPrivateKey);
-			KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-			PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
+			
+			
+			
+			
+			KeyFactory keyFactory = KeyFactory.getInstance("DSA");
+			PrivateKey privateKey = (DSAPrivateKey) keyFactory.generatePrivate(keySpec);
 			
 			String message = getTa_message().getText();
 			byte[] byteMessage = Utils.hexStringToByteArray(message);
