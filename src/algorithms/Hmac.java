@@ -16,7 +16,6 @@ public class Hmac {
 			hmac.init(secretKey);
 			hmac.update(message);
 			
-			
 			return Optional.of(hmac.doFinal());
 		} catch (NoSuchAlgorithmException e) {
 			System.out.println("HMAC - algoritmo errado!");

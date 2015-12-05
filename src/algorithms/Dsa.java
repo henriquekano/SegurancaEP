@@ -20,7 +20,7 @@ public class DSA {
 	public static KeyPair createKeyPair(){
 		try {
 			KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance("RSA");
-			keyGenerator.initialize(1024, new SecureRandom());
+			keyGenerator.initialize(1024);
 			return keyGenerator.generateKeyPair();
 		} catch (NoSuchAlgorithmException e) {
 			System.out.println("Algoritmo errado!");

@@ -22,6 +22,7 @@ import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
+import javax.xml.bind.DatatypeConverter;
 
 import src.algorithms.RSA;
 import src.algorithms.utils.Utils;
@@ -94,76 +95,70 @@ public class FrameRSA extends JFrame {
 
 
 	private void rsa_generatePairKey() {
-		JTextArea publicKeyTextArea = getTa_publickey();
-		JTextArea privateKeyTextArea = getTa_privatekey();
-		
 		KeyPair keyPair = RSA.createKeyPair();
 		PublicKey publicKey = keyPair.getPublic();
 		PrivateKey privateKey = keyPair.getPrivate();
 		
-		FrameRSA.publicKey = publicKey;
-		FrameRSA.privateKey = privateKey;
+		JTextArea publicKeyTextArea = getTa_publickey();
+		JTextArea privateKeyTextArea = getTa_privatekey();
+
 		
-		publicKeyTextArea.setText(Utils.toHexString(publicKey.getEncoded()));
-		privateKeyTextArea.setText(Utils.toHexString(privateKey.getEncoded()));
-		
-		
+		byte[] bytePublicKey = publicKey.getEncoded();
+		byte[] bytePrivateKey = privateKey.getEncoded();
+
+		publicKeyTextArea.setText(DatatypeConverter.printHexBinary(bytePublicKey));
+		privateKeyTextArea.setText(DatatypeConverter.printHexBinary(bytePrivateKey));		
 	}
 	
 	private void rsa_encrypt() {
-		JTextArea mesageTextArea = getTa_plantext();
+		String message = getTa_plantext().getText();
+		byte[] byteMessage = Utils.hexStringToByteArray(message);
 		JTextArea encryptedTextArea = getTa_cyphertext();
 		JTextArea keyTextArea = getTa_publickey();
 		
 		
-		if(!mesageTextArea.getText().isEmpty()){
-			byte[] hexKey = Utils.hexStringToByteArray(keyTextArea.getText());
-			X509EncodedKeySpec  ks = new X509EncodedKeySpec (hexKey);
-			Optional<byte[]> encryptedMessage;
-			try {
-				X509EncodedKeySpec  keySpec = new X509EncodedKeySpec(hexKey);
-				encryptedMessage = RSA.encrypt(
-						Utils.hexStringToByteArray(mesageTextArea.getText()),
-						kf.generatePublic(ks)
-						);
+		try {
+			byte[] bytesPublicKey = Utils.hexStringToByteArray(getTa_publickey().getText());
+			X509EncodedKeySpec keySpec = new X509EncodedKeySpec(bytesPublicKey);
+			KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+			PublicKey publicKey = keyFactory.generatePublic(keySpec);
+			
+			if(byteMessage.length > 0){
+				Optional<byte[]> encryptedMessage = RSA.encrypt(byteMessage, publicKey);
+				
 				if(encryptedMessage.isPresent()){
 					encryptedTextArea.setText(Utils.toHexString(encryptedMessage.get()));
-					this.encryptedMessage = encryptedMessage.get();
 				}
-			} catch (InvalidKeySpecException e) {
-				JOptionPane.showMessageDialog(null, "Chave publica errada");
-				e.printStackTrace();
 			}
-			
+		} catch (Exception e) {
+			e.printStackTrace();
+
 		}
-		
 	}
 
 
 	private void rsa_decrypt() {
 		JTextArea mesageTextArea = getTa_plantext();
-		JTextArea encryptedTextArea = getTa_cyphertext();
-		JTextArea keyTextArea = getTa_privatekey();
+		byte[] byteEncrypted = Utils.hexStringToByteArray(getTa_cyphertext().getText());
+		byte[] bytesPrivateKey = Utils.hexStringToByteArray(getTa_privatekey().getText());
 		
-		if(!encryptedTextArea.getText().isEmpty()){
-			byte[] hexKey = Utils.hexStringToByteArray(keyTextArea.getText());
-			Optional<byte[]> decryptedMessage = Optional.empty();
-			PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(hexKey);
-			try {
-				decryptedMessage = RSA.decrypt(
-						Utils.hexStringToByteArray(encryptedTextArea.getText()), 
-						kf.generatePrivate(keySpec)
-						);
-			} catch (InvalidKeySpecException e) {
-				JOptionPane.showMessageDialog(null, "Chave privada invalida!");
-				e.printStackTrace();
-			}
+		try {			
+			if(byteEncrypted.length > 0){
+				PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(bytesPrivateKey);
+				KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+				PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
+				
+				Optional<byte[]> decryptedMessage = Optional.empty();
+				
+				decryptedMessage = RSA.decrypt(byteEncrypted, privateKey);
+				
+				if(decryptedMessage.isPresent()){
+					JOptionPane.showMessageDialog(null, "Mensagem Decifrada: "+Utils.toHexString(decryptedMessage.get()));
+				}
+			}		
 			
-			if(decryptedMessage.isPresent()){
-				mesageTextArea.setText(Utils.toHexString(decryptedMessage.get()));
-			}
-		}else{
-			JOptionPane.showMessageDialog(null, "Coloque uma mensagem!");
+		} catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
+			e.printStackTrace();
 		}
 	}
 

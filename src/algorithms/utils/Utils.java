@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.JOptionPane;
 import javax.xml.bind.DatatypeConverter;
 
 public class Utils {
@@ -111,6 +112,26 @@ public class Utils {
 		}
 		
 		return intArray;
+	}
+	
+	public static byte[] hexStringToByteArray(String s) {
+	    try {
+			int len = s.length();
+			byte[] data = new byte[len / 2];
+			for (int i = 0; i < len; i += 2) {
+				if (Character.digit(s.charAt(0), 16) != -1){
+					data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+	                         + Character.digit(s.charAt(i+1), 16));
+				} else {
+					throw new StringIndexOutOfBoundsException();
+				}
+			}
+			return data;
+		} catch (StringIndexOutOfBoundsException e) {
+			// TODO Auto-generated catch block
+			JOptionPane.showMessageDialog(null, "Parâmetros não estão no formato hexadecimal, por favor, verifique.");
+			return new byte[0];
+		}
 	}
 	
 	public static String hexStringToClearString(String hexString){

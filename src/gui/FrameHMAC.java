@@ -12,11 +12,11 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
-import javax.xml.bind.DatatypeConverter;
 
 import src.algorithms.Hmac;
 import src.algorithms.utils.Utils;
@@ -97,6 +97,8 @@ public class FrameHMAC extends JFrame {
 				JTextArea macTextArea = getTa_mac();
 				macTextArea.setText(Utils.toHexString(mac.get()));
 			}
+		} else {
+			JOptionPane.showMessageDialog(null, "Por favor, preencha os parâmetros corretamente.");
 		}
 	}
 
