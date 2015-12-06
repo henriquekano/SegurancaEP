@@ -88,8 +88,11 @@ public class FrameHMAC extends JFrame {
 		String key = getTa_key().getText();
 		String hashAlgorithm = HMAC_ALGORITHMS().get((String)getCbox_mode().getSelectedItem());
 		
-		if(message != "" && key != "" && hashAlgorithm != null){
-			Optional<byte[]> mac = Hmac.encript(key, message, hashAlgorithm);
+		if(message != null && key != null && hashAlgorithm != null){
+			Optional<byte[]> mac = Hmac.encript(
+					Utils.hexStringToByteArray(key), 
+					Utils.hexStringToByteArray(message), 
+					hashAlgorithm);
 			if(mac.isPresent()){
 				JTextArea macTextArea = getTa_mac();
 				macTextArea.setText(Utils.toHexString(mac.get()));

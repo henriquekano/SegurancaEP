@@ -21,6 +21,7 @@ import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 
 import src.algorithms.AES;
+import src.algorithms.utils.Utils;
 
 public class FrameAES extends JFrame {
 	
@@ -102,7 +103,7 @@ public class FrameAES extends JFrame {
 		 System.out.println(initializationVector.length());
 		 JTextArea ivTextArea = getTa_iv();
 		 
-		 ivTextArea.setText(initializationVector);
+		 ivTextArea.setText(Utils.toHexString(initializationVector));
 	}
 
 
@@ -112,7 +113,7 @@ public class FrameAES extends JFrame {
 		 
 		JTextArea keyTextArea = getTa_key();
 		 
-		keyTextArea.setText(key);
+		keyTextArea.setText(Utils.toHexString(key));
 	}
 
 	

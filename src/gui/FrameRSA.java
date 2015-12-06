@@ -3,7 +3,6 @@ package src.gui;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Rectangle;
-import java.io.UnsupportedEncodingException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
@@ -14,7 +13,6 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Optional;
 
-import javax.crypto.Cipher;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -26,7 +24,6 @@ import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import javax.xml.bind.DatatypeConverter;
 
-import src.algorithms.DSA;
 import src.algorithms.RSA;
 import src.algorithms.utils.Utils;
 
@@ -48,6 +45,7 @@ public class FrameRSA extends JFrame {
 	private JTextArea ta_plantext;
 	private JTextArea ta_cyphertext;
 	
+	private static KeyFactory kf;
 	private static PublicKey publicKey;
 	private static PrivateKey privateKey;
 	private byte[] encryptedMessage;
@@ -66,6 +64,12 @@ public class FrameRSA extends JFrame {
 	 * @return void
 	 */
 	private void initialize() {
+		try {
+			kf = KeyFactory.getInstance("RSA");
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		this.setSize(620, 500);
 		this.setContentPane(getJContentPane());
 		this.setTitle("RSA Encryption");
@@ -97,6 +101,7 @@ public class FrameRSA extends JFrame {
 		
 		JTextArea publicKeyTextArea = getTa_publickey();
 		JTextArea privateKeyTextArea = getTa_privatekey();
+
 		
 		byte[] bytePublicKey = publicKey.getEncoded();
 		byte[] bytePrivateKey = privateKey.getEncoded();
@@ -109,6 +114,8 @@ public class FrameRSA extends JFrame {
 		String message = getTa_plantext().getText();
 		byte[] byteMessage = Utils.hexStringToByteArray(message);
 		JTextArea encryptedTextArea = getTa_cyphertext();
+		JTextArea keyTextArea = getTa_publickey();
+		
 		
 		try {
 			byte[] bytesPublicKey = Utils.hexStringToByteArray(getTa_publickey().getText());
@@ -125,6 +132,7 @@ public class FrameRSA extends JFrame {
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
+
 		}
 	}
 

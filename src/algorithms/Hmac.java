@@ -9,14 +9,14 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class Hmac {
 
-	public static Optional<byte[]> encript(String key, String message, String algorithm){
+	public static Optional<byte[]> encript(byte[] key, byte[] message, String algorithm){
 		try {
-			Mac sha256Hmac = Mac.getInstance(algorithm);
-			SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(), algorithm);
-			sha256Hmac.init(secretKey);
-			sha256Hmac.update(message.getBytes());
+			Mac hmac = Mac.getInstance(algorithm);
+			SecretKeySpec secretKey = new SecretKeySpec(key, algorithm);
+			hmac.init(secretKey);
+			hmac.update(message);
 			
-			return Optional.of(sha256Hmac.doFinal());
+			return Optional.of(hmac.doFinal());
 		} catch (NoSuchAlgorithmException e) {
 			System.out.println("HMAC - algoritmo errado!");
 			e.printStackTrace();
