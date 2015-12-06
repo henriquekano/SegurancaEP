@@ -225,8 +225,8 @@ public class AES {
 	public static String decrypt(String message, String key, OpMode operationMode, PaddingType paddingType, String initiationVector){
 		List<Integer> decryptedMessage = new ArrayList<Integer>();
 		int[] originalMessage = Utils.hexStringToIntArray(message);
-		int[] originalKey = Arrays.copyOfRange(Utils.hexStringToIntArray(Utils.toHexString(key)), 0, 16);
-		int[] originalInitializationVector = Arrays.copyOfRange(Utils.hexStringToIntArray(Utils.toHexString(key)), 0, BLOCK_SIZE);
+		int[] originalKey = Arrays.copyOfRange(Utils.hexStringToIntArray(key), 0, 16);
+		int[] originalInitializationVector = Arrays.copyOfRange(Utils.hexStringToIntArray(initiationVector), 0, BLOCK_SIZE);
 		int[] initializationVectorBuffer = originalInitializationVector;
 		int[] blockBuffer;
 		int index;
@@ -277,7 +277,7 @@ public class AES {
 //			mais coisas do modo de opera'c~ao
 			if(operationMode.equals(OpMode.CBC)){
 				if(i == originalMessage.length / BLOCK_SIZE - 1){
-					int[] initializationVector = Arrays.copyOfRange(Utils.hexStringToIntArray(Utils.toHexString(initiationVector)), 0, BLOCK_SIZE);
+					int[] initializationVector = Arrays.copyOfRange(Utils.hexStringToIntArray(initiationVector), 0, BLOCK_SIZE);
 					blockBuffer = cbcBlock(blockBuffer, initializationVector);
 				}else{
 					blockBuffer = cbcBlock(
@@ -308,23 +308,23 @@ public class AES {
 		
 		int[] decryptedMessageIntArray = Utils.toIntArray(decryptedMessage);
 		
-		decryptedMessageIntArray = removePadding(decryptedMessageIntArray, paddingType);
+//		decryptedMessageIntArray = removePadding(decryptedMessageIntArray, paddingType);
 				
-		return Utils.hexStringToClearString(Utils.intByteArrayToString(decryptedMessageIntArray));
+		return Utils.intByteArrayToString(decryptedMessageIntArray);
 	}
 	
 	public static String encrypt(String message, String key, OpMode operationMode, PaddingType paddingType, String initiationVector){
 		List<Integer> encryptedMessage = new ArrayList<Integer>();
-		int[] originalMessage = Utils.hexStringToIntArray(Utils.toHexString(message));
-		int[] originalKey = Arrays.copyOfRange(Utils.hexStringToIntArray(Utils.toHexString(key)), 0, BLOCK_SIZE);
-		int[] originalInitializationVector = Arrays.copyOfRange(Utils.hexStringToIntArray(Utils.toHexString(key)), 0, BLOCK_SIZE);
+		int[] originalMessage = Utils.hexStringToIntArray(message);
+		int[] originalKey = Arrays.copyOfRange(Utils.hexStringToIntArray(key), 0, BLOCK_SIZE);
+		int[] originalInitializationVector = Arrays.copyOfRange(Utils.hexStringToIntArray(initiationVector), 0, BLOCK_SIZE);
 		int[] initializationVectorBuffer = originalInitializationVector;
 		int[] blockBuffer;
 		
-		originalMessage = addPadding(
-				originalMessage, 
-				BLOCK_SIZE, 
-				paddingType);
+//		originalMessage = addPadding(
+//				originalMessage, 
+//				BLOCK_SIZE, 
+//				paddingType);
 
 		
 //		pra ver se naao vai ter um bloco com padding...
@@ -338,7 +338,7 @@ public class AES {
 				
 			if(operationMode.equals(OpMode.CBC)){
 				if(i == 0){
-					int[] initializationVector = Arrays.copyOfRange(Utils.hexStringToIntArray(Utils.toHexString(initiationVector)), 0, BLOCK_SIZE);
+					int[] initializationVector = Arrays.copyOfRange(Utils.hexStringToIntArray(initiationVector), 0, BLOCK_SIZE);
 					blockBuffer = cbcBlock(blockBuffer, initializationVector);
 				}else{
 					blockBuffer = cbcBlock(blockBuffer, Utils.toIntArray(encryptedMessage));

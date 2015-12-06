@@ -9,6 +9,16 @@ import javax.xml.bind.DatatypeConverter;
 
 public class Utils {
 	
+	public static byte[] hexStringToByteArray(String message){
+		int len = message.length();
+	    byte[] data = new byte[len / 2];
+	    for (int i = 0; i < len; i += 2) {
+	        data[i / 2] = (byte) ((Character.digit(message.charAt(i), 16) << 4)
+	                             + Character.digit(message.charAt(i+1), 16));
+	    }
+	    return data;
+	}
+	
 	public static String toHexString(byte[] byteArray){
 		return DatatypeConverter.printHexBinary(byteArray);
 	}
@@ -18,7 +28,7 @@ public class Utils {
 	}
 	
 	public static String toHexString(int[] intByteArray){
-		String buffer = "0x";
+		String buffer = "";
 		String asd;
 		for(int i = 0; i < intByteArray.length; i++){
 			asd = Integer.toHexString(intByteArray[i]).toUpperCase();
