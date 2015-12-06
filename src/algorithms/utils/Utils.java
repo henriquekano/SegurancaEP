@@ -7,18 +7,7 @@ import java.util.List;
 import javax.swing.JOptionPane;
 import javax.xml.bind.DatatypeConverter;
 
-public class Utils {
-	
-	public static byte[] hexStringToByteArray(String message){
-		int len = message.length();
-	    byte[] data = new byte[len / 2];
-	    for (int i = 0; i < len; i += 2) {
-	        data[i / 2] = (byte) ((Character.digit(message.charAt(i), 16) << 4)
-	                             + Character.digit(message.charAt(i+1), 16));
-	    }
-	    return data;
-	}
-	
+public class Utils {	
 	public static String toHexString(byte[] byteArray){
 		return DatatypeConverter.printHexBinary(byteArray);
 	}
