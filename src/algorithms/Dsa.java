@@ -96,16 +96,16 @@ public class DSA {
 		    String output;
 
             if (signer.verify(signature)){
-                output = "Assinatura v·lida!";
+                output = "Assinatura v√°lida!";
             } else {
-                output = "Assinatura inv·lida!";
+                output = "Assinatura inv√°lida!";
             }
 			return Optional.of(output);
 		} catch (NoSuchAlgorithmException e) {
 			System.out.println("Algoritmo errado!");
 			e.printStackTrace();
 		} catch (InvalidKeyException e) {
-			System.out.println("Chave inv·lida!");
+			System.out.println("Chave inv√°lida!");
 			e.printStackTrace();
 		} catch (SignatureException e) {
 			// TODO Auto-generated catch block
