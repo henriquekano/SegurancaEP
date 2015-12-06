@@ -1,5 +1,7 @@
 package src.algorithms;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
@@ -12,6 +14,10 @@ import java.security.spec.RSAPrivateKeySpec;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Security;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.interfaces.DSAParams;
+import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
@@ -25,6 +31,12 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.xml.bind.DatatypeConverter;
+
+import org.bouncycastle.asn1.DERInteger;
+import org.bouncycastle.asn1.DERSequenceGenerator;
+import org.bouncycastle.crypto.params.DSAParameters;
+import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
+import org.bouncycastle.crypto.signers.DSASigner;
 
 public class DSA {
 	public static KeyPair createKeyPair(){
@@ -56,46 +68,37 @@ public class DSA {
 
 	public static Optional<byte[]> sign(PrivateKey privateKey, byte[] message, String algorithm){
 		try {			
-			Cipher cipher = Cipher.getInstance("RSA");
-            cipher.init(Cipher.ENCRYPT_MODE, privateKey);
-   
-			byte[] digest = getDigest(message, algorithm);
-            byte[] signature = cipher.doFinal(digest);
-			
-			return Optional.of(signature);
+			Signature signer = Signature.getInstance(algorithm.replace("-", "")+"withDSA");
+		    signer.initSign(privateKey);
+		    signer.update(message);
+		
+			return Optional.of(signer.sign());	
 		} catch (NoSuchAlgorithmException e) {
 			System.out.println("Algoritmo errado!");
 			e.printStackTrace();
 		} catch (InvalidKeyException e) {
 			System.out.println("Chave privada invalida!");
 			e.printStackTrace();
-		} catch (NoSuchPaddingException e) {
-			System.out.println("Nao tem padding!");
-			e.printStackTrace();
-		} catch (IllegalBlockSizeException e) {
-			System.out.println("Tamanho de bloco errado!");
-			e.printStackTrace();
-		} catch (BadPaddingException e) {
-			System.out.println("Padding não permitido!");
+		} catch (SignatureException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
 		return Optional.empty();
 	}
 
-	public static Optional<String> verify(PublicKey publicKey, byte[] digest, byte[] signature, String algorithm){
+	public static Optional<String> verify(PublicKey publicKey, byte[] digest, byte[] signature, String algorithm, byte[] message){
 
-		try {			
-			Cipher cipher = Cipher.getInstance("DES");
-			cipher.init(Cipher.DECRYPT_MODE, publicKey);
-            byte[] decrypted_digest =  cipher.doFinal(signature);
-            
-            String output;
+		try {		
+			Signature signer = Signature.getInstance(algorithm.replace("-", "")+"withDSA");
+		    signer.initVerify(publicKey);
+		    signer.update(message);
+		    
+		    String output;
 
-            if (Arrays.equals(decrypted_digest, digest)){
-                output = "Assinatura verificada e correta!";
+            if (signer.verify(signature)){
+                output = "Assinatura válida!";
             } else {
-                output = "Assinatura falsa!";
+                output = "Assinatura inválida!";
             }
 			return Optional.of(output);
 		} catch (NoSuchAlgorithmException e) {
@@ -104,14 +107,8 @@ public class DSA {
 		} catch (InvalidKeyException e) {
 			System.out.println("Chave inválida!");
 			e.printStackTrace();
-		} catch (NoSuchPaddingException e) {
-			System.out.println("Não tem padding!");
-			e.printStackTrace();
-		} catch (IllegalBlockSizeException e) {
-			System.out.println("Tamanho de bloco nao permitido!");
-			e.printStackTrace();
-		} catch (BadPaddingException e) {
-			System.out.println("Padding não permitido!");
+		} catch (SignatureException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return Optional.empty();
@@ -119,7 +116,6 @@ public class DSA {
 	
 	public static PublicKey createPublicKeyByParams(BigInteger p, BigInteger q, BigInteger g, BigInteger y) {
 	    try {
-//	    	ver se não é RSA mesmo
 			KeyFactory keyFactory = KeyFactory.getInstance("DSA");
 			KeySpec publicKeySpec = new DSAPublicKeySpec(y, p, q, g);
 			return keyFactory.generatePublic(publicKeySpec);
@@ -149,6 +145,27 @@ public class DSA {
 			return null;
 		}
 	}	
+	
+	public static byte[] derEncode(BigInteger r, BigInteger s) {
+        try {
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			DERSequenceGenerator seqGen = new DERSequenceGenerator(bos);
+ 
+			seqGen.addObject(new DERInteger(r));
+			seqGen.addObject(new DERInteger(s));
+			seqGen.close();
+ 
+			byte[] asnsignature = bos.toByteArray();
+			bos.close();
+			seqGen.close();
+			return asnsignature;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+        
+    }
 	
 	public static String getPublicKeyHexString(KeyPair keyPair){
 		PublicKey publicKey = keyPair.getPublic();

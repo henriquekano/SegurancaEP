@@ -77,41 +77,47 @@ public class FrameDSA extends JFrame {
 		this.setContentPane(getJContentPane());
 		this.setTitle("DSA Signature");
 		
-		String P = "a8f9cd201e5e35d892f85f80e4db2599a5676a3b1d4f190330ed3256b26d0e80a0e49a8fffaaad2a24f472d2573241d4d6d6c7480c80b4c67bb4479c15ada7ea8424d2502fa01472e760241713dab025ae1b02e1703a1435f62ddf4ee4c1b664066eb22f2e3bf28bb70a2a76e4fd5ebe2d1229681b5b06439ac9c7e9d8bde283";
-		String Q = "f85f0f83ac4df7ea0cdf8f469bfeeaea14156495";
-		String G = "2b3152ff6c62f14622b8f48e59f8af46883b38e79b8c74deeae9df131f8b856e3ad6c8455dab87cc0da8ac973417ce4f7878557d6cdf40b35b4a0ca3eb310c6a95d68ce284ad4e25ea28591611ee08b8444bd64b25f3f7c572410ddfb39cc728b9c936f85f419129869929cdb909a6a3a99bbe089216368171bd0ba81de4fe33";
-		String X = "c53eae6d45323164c7d07af5715703744a63fc3a";
-		String Y = "313fd9ebca91574e1c2eebe1517c57e0c21b0209872140c5328761bbb2450b33f1b18b409ce9ab7c4cd8fda3391e8e34868357c199e16a6b2eba06d6749def791d79e95d3a4d09b24c392ad89dbf100995ae19c01062056bb14bce005e8731efde175f95b975089bdcdaea562b32786d96f5a31aedf75364008ad4fffebb970b";
-		
-		BigInteger p = new BigInteger(P, 16);
-		BigInteger q = new BigInteger(Q, 16);
-		BigInteger g = new BigInteger(G, 16);
-		BigInteger x = new BigInteger(X, 16);
-		BigInteger y = new BigInteger(Y, 16);
-		
-		PublicKey publicKey = DSA.createPublicKeyByParams(p, q, g, y);
-		PrivateKey privateKey = DSA.createPrivateKeyByParams(p, q, g, x);
-		
-		byte[] bytePublicKey = publicKey.getEncoded();
-		byte[] bytePrivateKey = privateKey.getEncoded();
-		
-		JTextArea publicKeyTextArea = getTa_publickey();
-		JTextArea privateKeyTextArea = getTa_privatekey();
-		
-		publicKeyTextArea.setText(DatatypeConverter.printHexBinary(bytePublicKey));
-		privateKeyTextArea.setText(DatatypeConverter.printHexBinary(bytePrivateKey));
+//		String P = "dc5bf3a88b2d99e4c95cdd7a0501cc38630d425cf5c390af3429cff1f35147b795caea923f0d3577158f8a0c89dabd1962c2c453306b5d70cacfb01430aceb54e5a5fa6f9340d3bd2da612fceeb76b0ec1ebfae635a56ab141b108e00dc76eefe2edd0c514c21c457457c39065dba9d0ecb7569c247172d8438ad2827b60435b";
+//		String Q = "e956602b83d195dbe945b3ac702fc61f81571f1d";
+//		String G = "d7eb9ca20a3c7a079606bafc4c9261ccaba303a5dc9fe9953f197dfe548c234895baa77f441ee6a2d97b909cbbd26ff7b869d24cae51b5c6edb127a4b5d75cd8b46608bfa148249dffdb59807c5d7dde3fe3080ca3a2d28312142becb1fa8e24003e21c7287108174b95d5bc711e1c8d9b1076784f5dc37a964a5e51390da713";
+//		
+//		String msg = "b966012b318dafbe4ba7c94e6ebf59165a1ebc5d5a4b279a2e314a502860513eaf1d1dbc1c10a8aa519b204006244e53e83451bdbe9dea8c922387bd5b2e59b61270e31b26ec2c34996c2bddcb85ad01f1c23d4f1ed716d2a179189be0dee32f2f71ce6fae80019f8009c55b6e4fc9b215a4687a776087a6c33e5ce5d564ef11";
+//		String X = "0af439b886144504d84de0616d151fe1d1f5ad06";
+//		String Y = "3d9dcb5a51f4a5c3ac315a255fc2d1f8f9b2da4921a057403d31c4a4e000bfecc4ed5aa7432c1791073b46ed8781993486d0b8cf8c5674d3ec87e03fbcc228c7510996fedef4b42e69788adc771920ea75991e24c14cce9b3e703512729a75d6ac2cebd513cc145f03548d5fd8ddef23932c7b39ad4f2db50f6a304121453b4c";
+//		String R = "60b989352fbe35be141b0db29c9dd22b55b65fd1";
+//		String S = "20b375c40e01300209ccf2e3db0681eccb03b64a";
+//		
+//		BigInteger p = new BigInteger(P, 16);
+//		BigInteger q = new BigInteger(Q, 16);
+//		BigInteger g = new BigInteger(G, 16);
+//		BigInteger x = new BigInteger(X, 16);
+//		BigInteger y = new BigInteger(Y, 16);
+//		BigInteger r = new BigInteger(R, 16);
+//		BigInteger s = new BigInteger(S, 16);
+//		
+//		PublicKey publicKey = DSA.createPublicKeyByParams(p, q, g, y);
+//		PrivateKey privateKey = DSA.createPrivateKeyByParams(p, q, g, x);
+//		
+//		byte[] bytePublicKey = publicKey.getEncoded();
+//		byte[] bytePrivateKey = privateKey.getEncoded();
+//		
+//		JTextArea publicKeyTextArea = getTa_publickey();
+//		JTextArea privateKeyTextArea = getTa_privatekey();
+//		JTextArea messageTextArea = getTa_message();
+//		JTextArea signatureTextArea = getTa_signature();
+//		JTextArea hashTextArea = getTa_hash();
+//		
+//		String signature = DatatypeConverter.printHexBinary(DSA.derEncode(r, s));
+//		
+//		publicKeyTextArea.setText(DatatypeConverter.printHexBinary(bytePublicKey));
+//		privateKeyTextArea.setText(DatatypeConverter.printHexBinary(bytePrivateKey));
+//		messageTextArea.setText(msg);
+//		signatureTextArea.setText(signature);
+//		String algo = HMAC_ALGORITHMS().get((String)getCbox_mode().getSelectedItem());
+//		byte[] digest = DSA.getDigest(Utils.hexStringToByteArray(msg), algo);
+//		hashTextArea.setText(DatatypeConverter.printHexBinary(digest));
 	}
-	
-	/**
-	 * This methos converts a string representing bytes to bytes
-	 * 
-	 * @param s
-	 * @return
-	 */
-	
-
-	/**
-	 * This method initializes jContentPane
+	 /* This method initializes jContentPane
 	 * 
 	 * @return javax.swing.JPanel
 	 */
@@ -149,10 +155,7 @@ public class FrameDSA extends JFrame {
 		try {
 			byte[] bytesPrivateKey = Utils.hexStringToByteArray(getTa_privatekey().getText());
 			PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(bytesPrivateKey);
-			
-			
-			
-			
+
 			KeyFactory keyFactory = KeyFactory.getInstance("DSA");
 			PrivateKey privateKey = (DSAPrivateKey) keyFactory.generatePrivate(keySpec);
 			
@@ -182,17 +185,19 @@ public class FrameDSA extends JFrame {
 		try {
 			byte[] bytesPublicKey = Utils.hexStringToByteArray(getTa_publickey().getText());
 			X509EncodedKeySpec keySpec = new X509EncodedKeySpec(bytesPublicKey);
-			KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+			KeyFactory keyFactory = KeyFactory.getInstance("DSA");
 			PublicKey publicKey = keyFactory.generatePublic(keySpec);
 			
 			String signature = getTa_signature().getText();
 			byte[] byteSignature = Utils.hexStringToByteArray(signature);
 			String digest = getTa_hash().getText();
 			byte[] byteDigest = Utils.hexStringToByteArray(digest);
+			String message = getTa_message().getText();
+			byte[] byteMessage = Utils.hexStringToByteArray(message);
 			String hashAlgorithm = HMAC_ALGORITHMS().get((String)getCbox_mode().getSelectedItem());
 
 			if(byteDigest.length != 0 && byteSignature.length != 0 && signature != null && publicKey != null && hashAlgorithm != null){
-				Optional<String> output = DSA.verify(publicKey, byteDigest, byteSignature, hashAlgorithm);
+				Optional<String> output = DSA.verify(publicKey, byteDigest, byteSignature, hashAlgorithm, byteMessage);
 				if(output.isPresent()){
 					JOptionPane.showMessageDialog(null, output.get());
 				}
@@ -384,8 +389,8 @@ public class FrameDSA extends JFrame {
 
 	private static final Map<String, String> HMAC_ALGORITHMS(){
 		Map<String, String> map = new HashMap<String, String>();
-		map.put("SHA-1", "SHA1");
-		map.put("SHA-256", "SHA256");
+		map.put("SHA-1", "SHA-1");
+		map.put("SHA-256", "SHA-256");
 		
 		return map;
 	}
