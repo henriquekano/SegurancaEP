@@ -77,6 +77,7 @@ public class FrameDSA extends JFrame {
 		this.setContentPane(getJContentPane());
 		this.setTitle("DSA Signature");
 		
+//		Utilizados para vetores de testes.
 //		String P = "dc5bf3a88b2d99e4c95cdd7a0501cc38630d425cf5c390af3429cff1f35147b795caea923f0d3577158f8a0c89dabd1962c2c453306b5d70cacfb01430aceb54e5a5fa6f9340d3bd2da612fceeb76b0ec1ebfae635a56ab141b108e00dc76eefe2edd0c514c21c457457c39065dba9d0ecb7569c247172d8438ad2827b60435b";
 //		String Q = "e956602b83d195dbe945b3ac702fc61f81571f1d";
 //		String G = "d7eb9ca20a3c7a079606bafc4c9261ccaba303a5dc9fe9953f197dfe548c234895baa77f441ee6a2d97b909cbbd26ff7b869d24cae51b5c6edb127a4b5d75cd8b46608bfa148249dffdb59807c5d7dde3fe3080ca3a2d28312142becb1fa8e24003e21c7287108174b95d5bc711e1c8d9b1076784f5dc37a964a5e51390da713";
